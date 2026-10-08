@@ -194,16 +194,20 @@ const planMap = L.imageOverlay(
 if (typeof BASEMAP_DATA !== "undefined") {
   // Show the Master Plan base map
   planMap.addTo(map);
-// The local page uses online tiles, with the Master Plan base map as a fallback
+// The local or hosted page uses online tiles (OpenStreetMap first), with the Master Plan base map as a fallback
 } else {
   // OneMap grey base map from the Singapore Land Authority
   const oneMap = L.tileLayer("https://www.onemap.gov.sg/maps/tiles/Grey/{z}/{x}/{y}.png", {
+    // OneMap only has tiles over Singapore; asking outside this box returns "not found"
+    bounds: [[1.144, 103.535], [1.494, 104.1]],
+    // OneMap tiles start at zoom 11
+    minZoom: 11,
     // Highest zoom level of the tiles
     maxZoom: 19,
     // Required credit for the base map
     attribution: '<a href="https://www.onemap.gov.sg/" target="_blank" rel="noopener">OneMap</a> &copy; contributors | <a href="https://www.sla.gov.sg/" target="_blank" rel="noopener">Singapore Land Authority</a>',
-  // Add OneMap as the first choice
-  }).addTo(map);
+  // OneMap is offered in the base-map switch
+  });
   // Esri light grey base map (no key needed)
   const esriGrey = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}", {
     // Esri light grey tiles go up to zoom 16; larger zooms stretch them
@@ -219,17 +223,22 @@ if (typeof BASEMAP_DATA !== "undefined") {
     maxZoom: 19,
     // Required credit for the base map
     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors',
-  });
+  // OpenStreetMap is the base map shown at the start
+  }).addTo(map);
   // Switch in the upper-right corner to choose the base map by hand
-  L.control.layers({ "OneMap (grey)": oneMap, "OpenStreetMap": osm, "Esri (light grey)": esriGrey, "Master Plan 2025 (offline)": planMap }, null, { position: "topright" }).addTo(map);
-  // Count of OneMap tiles that failed to load
+  L.control.layers({ "OpenStreetMap": osm, "OneMap (grey)": oneMap, "Esri (light grey)": esriGrey, "Master Plan 2025 (offline)": planMap }, null, { position: "topright" }).addTo(map);
+  // Count of OpenStreetMap tiles that failed to load
   let tileErrors = 0;
-  // If several OneMap tiles fail, switch to the offline Master Plan base map
-  oneMap.on("tileerror", () => {
-    // Switch only once, after a few failures
-    if (++tileErrors !== 5) return;
-    // Remove the OneMap layer
-    map.removeLayer(oneMap);
+  // Count of OpenStreetMap tiles that loaded
+  let tilesLoaded = 0;
+  // Count every tile that loads
+  osm.on("tileload", () => { tilesLoaded++; });
+  // If OpenStreetMap fails completely (for example on a page opened as a local file), switch to the offline Master Plan base map
+  osm.on("tileerror", () => {
+    // Switch only once, after ten failures and only when no OpenStreetMap tile has loaded at all
+    if (++tileErrors !== 10 || tilesLoaded > 0) return;
+    // Remove the OpenStreetMap layer
+    map.removeLayer(osm);
     // Show the Master Plan base map below the dots
     planMap.addTo(map).bringToBack();
   });
