@@ -213,8 +213,15 @@ if (typeof BASEMAP_DATA !== "undefined") {
     // Required credit for the base map
     attribution: "Tiles &copy; Esri &mdash; Esri, HERE, Garmin, &copy; OpenStreetMap contributors, and the GIS user community",
   });
+  // OpenStreetMap standard base map (free for light use, with credit)
+  const osm = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    // Highest zoom level of the tiles
+    maxZoom: 19,
+    // Required credit for the base map
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors',
+  });
   // Switch in the upper-right corner to choose the base map by hand
-  L.control.layers({ "OneMap (grey)": oneMap, "Esri (light grey)": esriGrey, "Master Plan 2025 (offline)": planMap }, null, { position: "topright" }).addTo(map);
+  L.control.layers({ "OneMap (grey)": oneMap, "OpenStreetMap": osm, "Esri (light grey)": esriGrey, "Master Plan 2025 (offline)": planMap }, null, { position: "topright" }).addTo(map);
   // Count of OneMap tiles that failed to load
   let tileErrors = 0;
   // If several OneMap tiles fail, switch to the offline Master Plan base map
