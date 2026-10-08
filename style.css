@@ -1,0 +1,469 @@
+/* GE5219 Final Project: styles for the walking-access map */
+
+/* Colour and size settings used across the page (light theme) */
+:root {
+  /* Page background */
+  --bg: #ffffff;
+  /* Background of boxes on the map (legend, popups, buttons) */
+  --surface: #ffffff;
+  /* Main text colour */
+  --ink: #1f2328;
+  /* Secondary text colour */
+  --muted: #5b6168;
+  /* Thin divider lines */
+  --line: #e3e5e8;
+  /* Background of a highlighted search result */
+  --hover: #eef4fc;
+  /* Accent colour for controls (blue, same hue as the score scale) */
+  --accent: #1c5cab;
+  /* Sea colour behind the base map */
+  --sea: #d6e0e8;
+  /* Filter applied to the base-map image (none in the light theme) */
+  --basemap-filter: none;
+  /* Width of the side panel on wide screens */
+  --panel-w: 340px;
+}
+
+/* Dark theme when the device prefers dark and the viewer has not chosen light */
+@media (prefers-color-scheme: dark) {
+  /* Dark values of the colour settings */
+  :root:not([data-theme="light"]) {
+    /* Page background */
+    --bg: #15181c;
+    /* Background of boxes on the map */
+    --surface: #1f2328;
+    /* Main text colour */
+    --ink: #e6e8eb;
+    /* Secondary text colour */
+    --muted: #a3a9b1;
+    /* Thin divider lines */
+    --line: #343a42;
+    /* Background of a highlighted search result */
+    --hover: #22324a;
+    /* Accent colour for controls */
+    --accent: #6da7ec;
+    /* Sea colour behind the base map */
+    --sea: #1d252d;
+    /* Darken the base-map image while keeping its hues */
+    --basemap-filter: invert(1) hue-rotate(180deg) brightness(0.85);
+    /* Dark form controls and scrollbars */
+    color-scheme: dark;
+  }
+}
+
+/* Dark theme chosen explicitly by the viewer */
+:root[data-theme="dark"] {
+  /* Page background */
+  --bg: #15181c;
+  /* Background of boxes on the map */
+  --surface: #1f2328;
+  /* Main text colour */
+  --ink: #e6e8eb;
+  /* Secondary text colour */
+  --muted: #a3a9b1;
+  /* Thin divider lines */
+  --line: #343a42;
+  /* Background of a highlighted search result */
+  --hover: #22324a;
+  /* Accent colour for controls */
+  --accent: #6da7ec;
+  /* Sea colour behind the base map */
+  --sea: #1d252d;
+  /* Darken the base-map image while keeping its hues */
+  --basemap-filter: invert(1) hue-rotate(180deg) brightness(0.85);
+  /* Dark form controls and scrollbars */
+  color-scheme: dark;
+}
+
+/* Remove the default page margin and use a clean system font */
+html, body {
+  /* No outer margin, so the map fills the window */
+  margin: 0;
+  /* Full window height (inside any safe-area padding) */
+  height: 100%;
+  /* System font stack */
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  /* Base text colour */
+  color: var(--ink);
+  /* Page background */
+  background: var(--bg);
+}
+
+/* Lay out the panel and the map side by side */
+body {
+  /* Two columns: panel and map */
+  display: grid;
+  /* Fixed panel width, map takes the rest */
+  grid-template-columns: var(--panel-w) 1fr;
+}
+
+/* Side panel */
+#panel {
+  /* Scroll inside the panel when its content is taller than the window */
+  overflow-y: auto;
+  /* Inner spacing */
+  padding: 16px 18px;
+  /* Divider between panel and map */
+  border-right: 1px solid var(--line);
+  /* Smaller base font for the controls */
+  font-size: 14px;
+  /* Full height of the page */
+  height: 100%;
+  /* Include padding in the height */
+  box-sizing: border-box;
+}
+
+/* Map area */
+#map {
+  /* Full height of the page */
+  height: 100%;
+  /* Sea colour shows where the base map has no land */
+  background: var(--sea);
+}
+
+/* Base-map image: darkened in the dark theme */
+.basemap-img {
+  /* Filter from the theme settings */
+  filter: var(--basemap-filter);
+}
+
+/* Map controls, popups and attribution follow the page theme */
+.leaflet-bar a, .leaflet-popup-content-wrapper, .leaflet-popup-tip, .leaflet-control-layers, .leaflet-container .leaflet-control-attribution {
+  /* Box background */
+  background: var(--surface);
+  /* Text colour */
+  color: var(--ink);
+}
+
+/* Links inside the map follow the accent colour */
+.leaflet-container a {
+  /* Accent colour */
+  color: var(--accent);
+}
+
+/* Page heading */
+h1 {
+  /* Heading size */
+  font-size: 19px;
+  /* Space below */
+  margin: 0 0 6px;
+}
+
+/* Section headings */
+h2 {
+  /* Small, bold headings */
+  font-size: 13px;
+  /* Upper-case labels */
+  text-transform: uppercase;
+  /* Slight letter spacing for upper case */
+  letter-spacing: 0.04em;
+  /* Secondary colour */
+  color: var(--muted);
+  /* Space around */
+  margin: 0 0 8px;
+}
+
+/* Each control group */
+section {
+  /* Divider above each group */
+  border-top: 1px solid var(--line);
+  /* Space inside the group */
+  padding: 12px 0;
+}
+
+/* Introduction text */
+.lead {
+  /* Secondary colour */
+  color: var(--muted);
+  /* Space below */
+  margin: 0 0 12px;
+}
+
+/* Small helper text */
+.hint, .source {
+  /* Secondary colour */
+  color: var(--muted);
+  /* Smaller text */
+  font-size: 12px;
+  /* Space around */
+  margin: 6px 0;
+}
+
+/* Radio buttons shown as a two-part switch */
+.segmented {
+  /* Place the two options side by side */
+  display: flex;
+  /* Space between options */
+  gap: 6px;
+}
+
+/* One option of the switch */
+.segmented label {
+  /* Each option takes half the width */
+  flex: 1;
+  /* Border around each option */
+  border: 1px solid var(--line);
+  /* Rounded corners */
+  border-radius: 6px;
+  /* Inner spacing */
+  padding: 6px 8px;
+  /* Pointer cursor */
+  cursor: pointer;
+}
+
+/* Checkbox rows */
+.check {
+  /* One checkbox per line */
+  display: block;
+  /* Space between rows */
+  margin: 4px 0;
+  /* Pointer cursor */
+  cursor: pointer;
+}
+
+/* One slider row: label, slider, share */
+.slider-row {
+  /* Three columns */
+  display: grid;
+  /* Label, slider, share */
+  grid-template-columns: 130px 1fr 42px;
+  /* Centre the items vertically */
+  align-items: center;
+  /* Space between columns */
+  gap: 8px;
+  /* Space between rows */
+  margin: 4px 0;
+}
+
+/* Slider control */
+.slider-row input[type="range"] {
+  /* Fill the column */
+  width: 100%;
+  /* Use the accent colour for the slider */
+  accent-color: var(--accent);
+}
+
+/* Weight share shown at the end of each slider row */
+.slider-row output {
+  /* Right-align the number */
+  text-align: right;
+  /* Digits of equal width, so numbers do not jump */
+  font-variant-numeric: tabular-nums;
+}
+
+/* Row of preset buttons */
+.buttons {
+  /* Buttons side by side */
+  display: flex;
+  /* Space between buttons */
+  gap: 6px;
+  /* Space around */
+  margin: 8px 0;
+}
+
+/* Buttons */
+button {
+  /* Inherit the page font */
+  font: inherit;
+  /* Smaller text */
+  font-size: 13px;
+  /* Inner spacing */
+  padding: 5px 10px;
+  /* Thin border */
+  border: 1px solid var(--line);
+  /* Rounded corners */
+  border-radius: 6px;
+  /* Box background from the theme */
+  background: var(--surface);
+  /* Text colour from the theme */
+  color: var(--ink);
+  /* Pointer cursor */
+  cursor: pointer;
+}
+
+/* Button hover state */
+button:hover {
+  /* Accent border on hover */
+  border-color: var(--accent);
+}
+
+/* Summary table */
+#summary {
+  /* Full panel width */
+  width: 100%;
+  /* Single lines between cells */
+  border-collapse: collapse;
+  /* Digits of equal width */
+  font-variant-numeric: tabular-nums;
+}
+
+/* Summary table cells */
+#summary th, #summary td {
+  /* Inner spacing */
+  padding: 4px 2px;
+  /* Line under each row */
+  border-bottom: 1px solid var(--line);
+  /* Numbers aligned right */
+  text-align: right;
+}
+
+/* First column holds the row labels */
+#summary th:first-child, #summary td:first-child {
+  /* Labels aligned left */
+  text-align: left;
+}
+
+/* Column headings of the summary table */
+#summary thead th {
+  /* Secondary colour */
+  color: var(--muted);
+  /* Normal weight */
+  font-weight: 600;
+  /* Smaller text */
+  font-size: 12px;
+}
+
+/* Search box */
+#search {
+  /* Background from the theme */
+  background: var(--surface);
+  /* Text colour from the theme */
+  color: var(--ink);
+  /* Inherit the page font */
+  font: inherit;
+  /* Full panel width */
+  width: 100%;
+  /* Inner spacing */
+  padding: 6px 8px;
+  /* Thin border */
+  border: 1px solid var(--line);
+  /* Rounded corners */
+  border-radius: 6px;
+  /* Include padding in the width */
+  box-sizing: border-box;
+}
+
+/* List of search results */
+#search-results {
+  /* No bullets */
+  list-style: none;
+  /* No indent */
+  padding: 0;
+  /* Space above */
+  margin: 4px 0 0;
+}
+
+/* One search result */
+#search-results li {
+  /* Inner spacing */
+  padding: 5px 6px;
+  /* Line between results */
+  border-bottom: 1px solid var(--line);
+  /* Pointer cursor */
+  cursor: pointer;
+}
+
+/* Highlighted search result (mouse or keyboard) */
+#search-results li:hover, #search-results li.active {
+  /* Light highlight from the theme */
+  background: var(--hover);
+}
+
+/* Second line of a search result (postal code and group) */
+#search-results small {
+  /* Secondary colour */
+  color: var(--muted);
+}
+
+/* Amenity drop-down */
+select {
+  /* Background from the theme */
+  background: var(--surface);
+  /* Text colour from the theme */
+  color: var(--ink);
+  /* Inherit the page font */
+  font: inherit;
+  /* Full width */
+  width: 100%;
+  /* Inner spacing */
+  padding: 5px;
+}
+
+/* Map legend box */
+.legend {
+  /* Box background from the theme */
+  background: var(--surface);
+  /* Text colour from the theme */
+  color: var(--ink);
+  /* Inner spacing */
+  padding: 8px 10px;
+  /* Rounded corners */
+  border-radius: 6px;
+  /* Soft shadow */
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  /* Small text */
+  font-size: 12px;
+  /* Line height */
+  line-height: 18px;
+}
+
+/* Colour swatch in the legend */
+.legend i {
+  /* Square swatch */
+  display: inline-block;
+  /* Swatch width */
+  width: 12px;
+  /* Swatch height */
+  height: 12px;
+  /* Round swatch, like the dots on the map */
+  border-radius: 50%;
+  /* Space to the label */
+  margin-right: 6px;
+  /* Align with the text */
+  vertical-align: -1px;
+}
+
+/* Popup table */
+.popup-table {
+  /* Single lines between cells */
+  border-collapse: collapse;
+  /* Digits of equal width */
+  font-variant-numeric: tabular-nums;
+}
+
+/* Popup table cells */
+.popup-table th, .popup-table td {
+  /* Inner spacing */
+  padding: 2px 6px;
+  /* Numbers aligned right */
+  text-align: right;
+}
+
+/* First column of the popup table */
+.popup-table th:first-child, .popup-table td:first-child {
+  /* Labels aligned left */
+  text-align: left;
+}
+
+/* Narrow screens: put the panel above the map */
+@media (max-width: 760px) {
+  /* One column */
+  body {
+    /* Panel on top, map below */
+    grid-template-columns: 1fr;
+  }
+  /* Panel height on small screens */
+  #panel {
+    /* Panel takes the upper part of the screen */
+    height: 45vh;
+    /* No side divider */
+    border-right: none;
+    /* Divider below */
+    border-bottom: 1px solid var(--line);
+  }
+  /* Map height on small screens */
+  #map {
+    /* Map takes the lower part of the screen */
+    height: 55vh;
+  }
+}

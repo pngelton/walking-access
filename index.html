@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<!-- GE5219 Final Project: interactive map of 5- and 10-minute walking accessibility -->
+<html lang="en">
+<head>
+  <!-- Character set, so names with accents display correctly -->
+  <meta charset="utf-8">
+  <!-- Scale the page to the device width (phones and tablets) -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Title shown in the browser tab -->
+  <title>Walking Access in Singapore</title>
+  <!-- Leaflet map library styles (loaded from the cdnjs content network) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+  <!-- Page styles for this map -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Side panel with the controls and the summary -->
+  <aside id="panel">
+    <!-- Page heading -->
+    <h1>Walking access to daily needs</h1>
+    <!-- One-sentence description of the map -->
+    <p class="lead">Each dot is a residential building. Its colour shows how many daily needs can be reached on foot, scored from 0 to 100.</p>
+
+    <!-- Search for a building -->
+    <section>
+      <!-- Section heading -->
+      <h2><label for="search">Find a building</label></h2>
+      <!-- Search box: postal code, address or condominium name -->
+      <input type="search" id="search" placeholder="Postal code, address or condo name" autocomplete="off">
+      <!-- Matching buildings are listed here by app.js -->
+      <ul id="search-results" role="listbox" aria-label="Search results"></ul>
+    </section>
+
+    <!-- Walking-time switch -->
+    <section>
+      <!-- Section heading -->
+      <h2>Walking time</h2>
+      <!-- Two radio buttons: 5 or 10 minutes -->
+      <div class="segmented" role="radiogroup" aria-label="Walking time">
+        <!-- 5-minute option (400 m) -->
+        <label><input type="radio" name="threshold" value="5"> 5 min (400 m)</label>
+        <!-- 10-minute option (800 m), selected at start -->
+        <label><input type="radio" name="threshold" value="10" checked> 10 min (800 m)</label>
+      </div>
+    </section>
+
+    <!-- Housing-group filter -->
+    <section>
+      <!-- Section heading -->
+      <h2>Housing</h2>
+      <!-- Show or hide HDB homes -->
+      <label class="check"><input type="checkbox" id="show-hdb" checked> HDB</label>
+      <!-- Show or hide private homes -->
+      <label class="check"><input type="checkbox" id="show-private" checked> Private (condominiums, apartments, ECs)</label>
+    </section>
+
+    <!-- Domain weights -->
+    <section>
+      <!-- Section heading -->
+      <h2>Importance of each domain</h2>
+      <!-- Short instruction -->
+      <p class="hint">Move a slider to give a domain more or less weight. Shares are rescaled to 100%.</p>
+      <!-- The five sliders are added here by app.js -->
+      <div id="sliders"></div>
+      <!-- Preset buttons -->
+      <div class="buttons">
+        <!-- Equal weights, as in the report -->
+        <button type="button" id="preset-equal">Equal weights</button>
+        <!-- Example weights for older residents -->
+        <button type="button" id="preset-older">Older residents</button>
+      </div>
+      <!-- Paid-gym switch -->
+      <label class="check"><input type="checkbox" id="use-gyms" checked> Count paid gyms under Parks &amp; Recreation</label>
+    </section>
+
+    <!-- Summary table that updates with every change -->
+    <section>
+      <!-- Section heading -->
+      <h2>HDB and private homes compared</h2>
+      <!-- The table is filled in by app.js -->
+      <table id="summary" aria-live="polite"></table>
+      <!-- Note on how the values are computed -->
+      <p class="hint">Means are weighted by dwelling units. "Within subzone" compares HDB and private homes only inside the 124 subzones that have both.</p>
+    </section>
+
+    <!-- Amenity layer chooser -->
+    <section>
+      <!-- Section heading -->
+      <h2>Show amenities</h2>
+      <!-- Drop-down list of domains; filled in by app.js -->
+      <select id="amenity-domain" aria-label="Amenity domain"></select>
+    </section>
+
+    <!-- Source note -->
+    <p class="source">Data: HDB, URA, NParks, NEA, MOH, SFA, LTA, OpenStreetMap; walk network v0.3. GE5219 Final Project, NUS, 2026.</p>
+  </aside>
+
+  <!-- Map container -->
+  <main id="map" aria-label="Map of residential buildings coloured by walking-access score"></main>
+
+  <!-- Leaflet map library (loaded from the cdnjs content network) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <!-- Home records written by Notebook 06 (defines HOMES) -->
+  <script src="data_homes.js"></script>
+  <!-- Amenity records written by Notebook 06 (defines AMENITIES) -->
+  <script src="data_amenities.js"></script>
+  <!-- Map logic -->
+  <script src="app.js"></script>
+</body>
+</html>
