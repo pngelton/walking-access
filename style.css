@@ -401,10 +401,10 @@ select {
   border-radius: 6px;
   /* Soft shadow */
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
-  /* Small text */
-  font-size: 12px;
+  /* Text size (larger than before, so it reads on phones too) */
+  font-size: 14px;
   /* Line height */
-  line-height: 18px;
+  line-height: 20px;
 }
 
 /* Colour swatch in the legend */
@@ -412,15 +412,73 @@ select {
   /* Square swatch */
   display: inline-block;
   /* Swatch width */
-  width: 12px;
+  width: 18px;
   /* Swatch height */
-  height: 12px;
+  height: 18px;
   /* Round swatch, like the dots on the map */
   border-radius: 50%;
+  /* Thin outline, as on the map dots */
+  border: 1px solid rgba(85, 85, 85, 0.6);
+  /* Include the outline in the size */
+  box-sizing: border-box;
   /* Space to the label */
-  margin-right: 6px;
+  margin-right: 8px;
   /* Align with the text */
-  vertical-align: -1px;
+  vertical-align: -4px;
+}
+
+/* One class row in the legend */
+.legend-row {
+  /* Space between rows */
+  margin: 2px 0;
+  /* Digits of equal width */
+  font-variant-numeric: tabular-nums;
+}
+
+/* Small explanatory lines in the legend */
+.legend-sub {
+  /* Secondary colour */
+  color: var(--muted);
+  /* Smaller text */
+  font-size: 12px;
+  /* Space below */
+  margin-bottom: 4px;
+  /* Keep the legend narrow */
+  max-width: 190px;
+  /* Normal line height for wrapped text */
+  line-height: 1.35;
+}
+
+/* "Higher access" and "Lower access" labels */
+.legend-end {
+  /* Secondary colour */
+  color: var(--muted);
+  /* Small capitals look like a label */
+  font-size: 12px;
+  /* Bold label */
+  font-weight: 600;
+  /* Space around */
+  margin: 4px 0 2px;
+}
+
+/* Folding score explanation */
+.explain summary {
+  /* Accent colour, so it reads as something to open */
+  color: var(--accent);
+  /* Bold */
+  font-weight: 600;
+  /* Pointer cursor */
+  cursor: pointer;
+}
+
+/* Paragraphs of the score explanation */
+.explain p {
+  /* Smaller text */
+  font-size: 13px;
+  /* Comfortable line height */
+  line-height: 1.45;
+  /* Space between paragraphs */
+  margin: 8px 0;
 }
 
 /* Popup table */
@@ -445,6 +503,184 @@ select {
   text-align: left;
 }
 
+/* Heading row of the selected-building section */
+.selection-head {
+  /* Heading on the left, button on the right */
+  display: flex;
+  /* Push the button to the right */
+  justify-content: space-between;
+  /* Centre both vertically */
+  align-items: center;
+}
+
+/* Heading inside that row */
+.selection-head h2 {
+  /* No extra space below, the row sets the spacing */
+  margin: 0;
+}
+
+/* Address of the selected building */
+.sel-address {
+  /* Slightly larger than the panel text */
+  font-size: 15px;
+  /* Space around */
+  margin: 8px 0 2px;
+}
+
+/* One domain group in the list of reachable amenities */
+.poi-group {
+  /* Space above each group */
+  margin-top: 10px;
+}
+
+/* Heading of a domain group */
+.poi-group summary {
+  /* Bold label */
+  font-weight: 600;
+  /* Pointer cursor, since the group can be folded */
+  cursor: pointer;
+}
+
+/* List of amenities in a group */
+.poi-list {
+  /* No bullets */
+  list-style: none;
+  /* No indent */
+  padding: 0;
+  /* Small space above */
+  margin: 4px 0 0;
+}
+
+/* One amenity in the list */
+.poi-list li {
+  /* Name on the left, time on the right */
+  display: flex;
+  /* Space between name and time */
+  justify-content: space-between;
+  /* Space between the two parts */
+  gap: 8px;
+  /* Inner spacing */
+  padding: 4px 4px;
+  /* Line between items */
+  border-bottom: 1px solid var(--line);
+  /* Pointer cursor: a click shows the amenity on the map */
+  cursor: pointer;
+}
+
+/* Highlight of an amenity under the mouse */
+.poi-list li:hover {
+  /* Highlight colour from the theme */
+  background: var(--hover);
+}
+
+/* Type of amenity under its name */
+.poi-list small {
+  /* Secondary colour */
+  color: var(--muted);
+}
+
+/* Walking time and distance of an amenity */
+.poi-time {
+  /* Keep the time on one line */
+  white-space: nowrap;
+  /* Digits of equal width */
+  font-variant-numeric: tabular-nums;
+  /* Right-align */
+  text-align: right;
+}
+
+/* Amenities beyond 5 minutes are shown in the secondary colour */
+.poi-far .poi-time {
+  /* Secondary colour */
+  color: var(--muted);
+}
+
+/* Colour swatch of a domain */
+.swatch {
+  /* Small round swatch */
+  display: inline-block;
+  /* Width */
+  width: 10px;
+  /* Height */
+  height: 10px;
+  /* Rounded square, like the amenity symbols on the map */
+  border-radius: 2px;
+  /* Space to the label */
+  margin-right: 6px;
+}
+
+/* Note on how distances are measured */
+.note {
+  /* Smaller text */
+  font-size: 12px;
+  /* Accent border on the left */
+  border-left: 3px solid var(--accent);
+  /* Space between border and text */
+  padding: 4px 8px;
+  /* Light background from the theme */
+  background: var(--hover);
+  /* Space around */
+  margin: 10px 0 6px;
+}
+
+/* Short line samples for the outline key */
+.line-key {
+  /* Line sample */
+  display: inline-block;
+  /* Length */
+  width: 18px;
+  /* No height; the border draws the line */
+  height: 0;
+  /* Align with the text */
+  vertical-align: middle;
+}
+
+/* Solid line sample (5-minute outline) */
+.line-key.solid {
+  /* Solid line in the accent colour */
+  border-top: 2px solid var(--accent);
+}
+
+/* Dashed line sample (10-minute outline) */
+.line-key.dashed {
+  /* Dashed line in the accent colour */
+  border-top: 2px dashed var(--accent);
+}
+
+/* Amenity symbol of a selected building (Leaflet adds this class to the symbol's box) */
+.poi-icon span {
+  /* Fill the symbol's box */
+  display: flex;
+  /* Full width of the box */
+  width: 100%;
+  /* Full height of the box */
+  height: 100%;
+  /* Centre the letter horizontally */
+  justify-content: center;
+  /* Centre the letter vertically */
+  align-items: center;
+  /* Slightly rounded square */
+  border-radius: 4px;
+  /* White outline so the symbol stands out on any base map */
+  border: 2px solid #ffffff;
+  /* Include the outline in the size */
+  box-sizing: border-box;
+  /* White letter */
+  color: #ffffff;
+  /* Small bold letter */
+  font: 700 11px/1 system-ui, sans-serif;
+  /* Soft shadow */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+/* Amenities beyond 5 minutes: lighter symbol */
+.poi-icon-far span {
+  /* Partly transparent */
+  opacity: 0.7;
+  /* Smaller letter */
+  font-size: 9px;
+}
+
 /* Narrow screens: put the panel above the map */
 @media (max-width: 760px) {
   /* One column */
@@ -465,5 +701,26 @@ select {
   #map {
     /* Map takes the lower part of the screen */
     height: 55vh;
+  }
+  /* Compact legend on small screens, so it does not cover the map */
+  .legend {
+    /* Slightly smaller text, still readable */
+    font-size: 13px;
+    /* Tighter line height */
+    line-height: 17px;
+    /* Less inner spacing */
+    padding: 6px 8px;
+  }
+  /* Smaller swatches on small screens */
+  .legend i {
+    /* Swatch width */
+    width: 14px;
+    /* Swatch height */
+    height: 14px;
+  }
+  /* Drop the explanatory lines of the legend on small screens (the panel explains the score) */
+  .legend-sub {
+    /* Not shown */
+    display: none;
   }
 }
