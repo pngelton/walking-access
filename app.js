@@ -27,9 +27,9 @@ const COLOURS_LIGHT = ["#fde725", "#7ad151", "#22a884", "#2a788e", "#414487"];
 // Colour per class on a dark page: dark blue (low score) to yellow (high score), so higher scores stay the most visible
 const COLOURS_DARK = ["#3e4a89", "#2a788e", "#22a884", "#7ad151", "#fde725"];
 // Normalisation caps per domain (outputs/normalisation_caps.csv): the 95th percentile of the 10-minute counts
-const CAPS = { food: 9, groc: 6, health: 20, park: 5, pt: 26 };
+const CAPS = { food: 9, groc: 6, health: 23, park: 5, pt: 30 };
 // Parks & Recreation cap without paid gyms (outputs/no_paid_gyms/normalisation_caps.csv)
-const PARK_CAP_NO_GYMS = 3;
+const PARK_CAP_NO_GYMS = 4;
 // Opacity of the home dots: normal, and faded while a building is selected
 const DOT_OPACITY = { normal: 0.9, faded: 0.2 };
 // Colour of the amenity dots (orange, so they stand apart from the blue homes)
@@ -48,6 +48,10 @@ const M_PER_MIN = 80;
 const GYM_CATEGORY = "Gym";
 // File with the walking routes from Notebook 07, loaded after the map is drawn
 const REACH_FILE = "data_reach.js";
+// Colour of the walkable-area outlines of a selected building
+const OUTLINE_COLOUR = "#1c5cab";
+// Fill opacity of the 10-minute area (lighter) and the 5-minute area (darker, drawn on top)
+const OUTLINE_FILL = { 10: 0.08, 5: 0.18 };
 
 // ---------------------------------------------------------------------------
 // 2. State: everything the user can change
@@ -609,6 +613,10 @@ function renderSelection() {
   const i = state.selected;
   // Hide the section and show the hint when nothing is selected
   section.hidden = i === null;
+  // Show the map key for the selected building only while a building is selected
+  selectionKey.getContainer().hidden = i === null;
+  // Mark the page while a building is selected (small screens then show the selection key instead of the score legend)
+  document.body.classList.toggle("selecting", i !== null);
   // The hint is shown only when nothing is selected
   document.getElementById("select-hint").hidden = i !== null;
   // Fade the home dots while a building is selected
@@ -632,9 +640,9 @@ function renderSelection() {
   // The selected building drawn again at full colour on top of the faded dots
   L.circleMarker([HOMES.lat[i], HOMES.lon[i]], { radius: 7, color: "#ffffff", weight: 2, fillColor: colourOf(scores[i]), fillOpacity: 1, interactive: false }).addTo(selectionLayer);
   // Outline of the area within 10 minutes (dashed)
-  L.polygon(outlineLatLngs(i, 10), { color: "#1c5cab", weight: 2, dashArray: "6 5", fillOpacity: 0.04, interactive: false }).addTo(selectionLayer);
+  L.polygon(outlineLatLngs(i, 10), { color: OUTLINE_COLOUR, weight: 2, dashArray: "6 5", fillOpacity: OUTLINE_FILL[10], interactive: false }).addTo(selectionLayer);
   // Outline of the area within 5 minutes (solid)
-  L.polygon(outlineLatLngs(i, 5), { color: "#1c5cab", weight: 2, fillOpacity: 0.08, interactive: false }).addTo(selectionLayer);
+  L.polygon(outlineLatLngs(i, 5), { color: OUTLINE_COLOUR, weight: 2, fillOpacity: OUTLINE_FILL[5], interactive: false }).addTo(selectionLayer);
   // Draw the farthest amenities first, so the nearest ones end up on top
   for (const { j, m } of [...items].reverse()) {
     // True when the amenity is within 5 minutes
@@ -708,7 +716,7 @@ const legend = L.control({ position: "bottomright" });
 // Build the legend content when it is added to the map
 legend.onAdd = function () {
   // Container for the legend
-  const div = L.DomUtil.create("div", "legend");
+  const div = L.DomUtil.create("div", "legend score-legend");
   // Fill the legend for the current theme
   drawLegend(div);
   // Return the finished legend
@@ -742,6 +750,52 @@ function drawLegend(div) {
 }
 // Add the legend to the map
 legend.addTo(map);
+
+/**
+ * Small SVG sample of a walkable-area outline for the map key: a shaded square with a solid or dashed border.
+ * @param {number} t - walking time in minutes (5 or 10).
+ * @returns {string} SVG markup.
+ */
+function outlineSample(t) {
+  // Dash pattern: dashed for 10 minutes, solid for 5 minutes
+  const dash = t === 10 ? ' stroke-dasharray="5 4"' : "";
+  // Square with the same colour, border and shading as the outline on the map
+  return `<svg width="26" height="18" aria-hidden="true"><rect x="1" y="1" width="24" height="16" fill="${OUTLINE_COLOUR}" fill-opacity="${OUTLINE_FILL[t]}" stroke="${OUTLINE_COLOUR}" stroke-width="2"${dash}/></svg>`;
+}
+
+// Map key for a selected building, in the lower-left corner (hidden until a building is selected)
+const selectionKey = L.control({ position: "bottomleft" });
+// Build the key when it is added to the map
+selectionKey.onAdd = function () {
+  // Container for the key
+  const div = L.DomUtil.create("div", "legend selection-key");
+  // One row per amenity symbol
+  const symbols = DOMAINS.map((d) => `<div class="key-row"><span class="key-symbol" style="background:${DOMAIN_COLOURS[d.label]}">${DOMAIN_LETTERS[d.label]}</span>${d.label}</div>`).join("");
+  // Title, outline rows, ring row, symbol rows and a short note
+  div.innerHTML = `<strong>Selected building</strong>`
+    // Selected building ring
+    + `<div class="key-row"><span class="key-ring"></span>Selected building</div>`
+    // 5-minute area: solid line, darker shade
+    + `<div class="key-row">${outlineSample(5)}Reachable within 5 min (400 m)</div>`
+    // 10-minute area: dashed line, lighter shade
+    + `<div class="key-row">${outlineSample(10)}Reachable within 10 min (800 m)</div>`
+    // How to read the outlines
+    + `<div class="legend-sub">The shaded areas trace the walking paths that can be reached along the network. Inward notches are directions with no path; the outline is approximate.</div>`
+    // Amenity symbols heading
+    + `<div class="legend-end">Amenities in reach</div>`
+    // Amenity symbols
+    + symbols
+    // Size note
+    + `<div class="legend-sub">Larger symbol: within 5 min. Smaller, lighter symbol: 5–10 min.</div>`;
+  // Keep clicks and scrolling on the key from moving the map
+  L.DomEvent.disableClickPropagation(div);
+  // Hidden until a building is selected
+  div.hidden = true;
+  // Return the finished key
+  return div;
+};
+// Add the key to the map
+selectionKey.addTo(map);
 // Redraw the colours when the device switches between light and dark
 window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", update);
 
@@ -1017,7 +1071,7 @@ function update() {
     if (layer.homeIndex !== undefined && layer.isPopupOpen()) layer.setPopupContent(popupHtml(layer.homeIndex));
   });
   // Redraw the legend for the walking time and theme
-  drawLegend(document.querySelector(".legend"));
+  drawLegend(document.querySelector(".score-legend"));
   // Show the caps used for Parks & Recreation under the current gym setting
   document.getElementById("cap-park").textContent = state.gyms ? CAPS.park : PARK_CAP_NO_GYMS;
   // Redraw the selected building's amenities for the new walking time or gym setting

@@ -47,9 +47,9 @@
       <!-- Address, counts and the list of reachable amenities -->
       <div id="selection-body" aria-live="polite"></div>
       <!-- How the distances are measured -->
-      <p class="note">Walking times follow the pedestrian network (footpaths, crossings, overhead bridges and linkways), not straight-line distance from the building. Speed: 4.8 km/h, so 5 min = 400 m and 10 min = 800 m.</p>
+      <p class="note">Walking times follow the pedestrian network (footpaths, crossings, overhead bridges, linkways and HDB void decks), not straight-line distance from the building. Speed: 4.8 km/h, so 5 min = 400 m and 10 min = 800 m.</p>
       <!-- Key to the outlines drawn on the map -->
-      <p class="hint"><span class="line-key solid"></span> area within 5 min &nbsp; <span class="line-key dashed"></span> area within 10 min (approximate outline of the reachable paths)</p>
+      <p class="hint"><span class="line-key solid"></span> solid line, darker shade: area reachable within 5 min (400 m)<br><span class="line-key dashed"></span> dashed line, lighter shade: area reachable within 10 min (800 m)<br>The outlines trace the walking paths reachable along the network, so they are not circles; inward notches are directions with no path. They are approximate and are not used in the score. The key in the lower-left corner of the map explains the symbols.</p>
     </section>
 
     <!-- Walking-time switch -->
@@ -64,7 +64,7 @@
         <label><input type="radio" name="threshold" value="10" checked> 10 min (800 m)</label>
       </div>
       <!-- What the setting does -->
-      <p class="hint">Choose how far to look for daily needs from each building. Each score updates to count the amenities reachable within the selected time along walking routes (footpaths, crossings, overhead bridges and linkways), not in a straight line. At 4.8 km/h, 5 minutes is 400 m and 10 minutes is 800 m.</p>
+      <p class="hint">Choose how far to look for daily needs from each building. Each score updates to count the amenities reachable within the selected time along walking routes (footpaths, crossings, overhead bridges, linkways and HDB void decks), not in a straight line. At 4.8 km/h, 5 minutes is 400 m and 10 minutes is 800 m.</p>
       <!-- Why the 5-minute map looks lighter -->
       <p class="hint">Both settings use the same benchmark, so scores can be compared between them. Few buildings have much within 5 minutes, so most score below 20 at that setting.</p>
     </section>
@@ -78,11 +78,11 @@
         <!-- Step 1: counts -->
         <p><strong>1. Count what is within reach.</strong> For each building and each of the five domains (Food, Groceries, Healthcare, Parks &amp; Recreation, Public Transport), the map counts the amenities reachable along walking routes within the selected time. The exits of one MRT station count as one station, and each park counts once.</p>
         <!-- Step 2: normalisation -->
-        <p><strong>2. Put the domains on the same scale (normalisation).</strong> The domains have very different numbers of amenities: a building may reach 20 bus stops but only one supermarket. Each count is therefore compared with a fixed benchmark: the count that 95% of buildings stay at or below within 10 minutes. The benchmarks are Food 9, Groceries 6, Healthcare 20, Parks &amp; Recreation <span id="cap-park">5</span> and Public Transport 26. A count at or above the benchmark scores 1; a count of half the benchmark scores 0.5.</p>
+        <p><strong>2. Put the domains on the same scale (normalisation).</strong> The domains have very different numbers of amenities: a building may reach 20 bus stops but only one supermarket. Each count is therefore compared with a fixed benchmark: the count that 95% of buildings stay at or below within 10 minutes. The benchmarks are Food 9, Groceries 6, Healthcare 23, Parks &amp; Recreation <span id="cap-park">5</span> and Public Transport 30. A count at or above the benchmark scores 1; a count of half the benchmark scores 0.5.</p>
         <!-- Step 3: weights -->
         <p><strong>3. Combine the domains.</strong> The five domain scores are averaged using the weights set with the sliders (equal by default) and shown on a 0–100 scale.</p>
         <!-- What 100 means -->
-        <p><strong>What 100 means.</strong> A building scores 100 when it reaches the benchmark in every domain. This is possible: 22 buildings score 100 within 10 minutes with equal weights.</p>
+        <p><strong>What 100 means.</strong> A building scores 100 when it reaches the benchmark in every domain. This is possible: 20 buildings score 100 within 10 minutes with equal weights.</p>
         <!-- Absolute vs relative -->
         <p><strong>Comparing scores.</strong> The benchmark is fixed, so a score shows how much a building can reach, not its rank among other buildings. Because the same benchmark applies to both walking times and to any weights, a score changes only when what the building can reach, or the weights, change.</p>
         <!-- What the score is not -->
