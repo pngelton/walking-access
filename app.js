@@ -1148,8 +1148,8 @@ function drawScenario() {
   for (const site of sc.sites) {
     // Numbered square at the site, drawn above the home dots
     const m = L.marker([site.lat, site.lon], { icon: siteIcon(sc, site.step), title: `${sc.site_name} ${site.step}: ${site.address}`, zIndexOffset: 2000 });
-    // Details of the site when it is clicked
-    m.bindPopup(sitePopupHtml(sc, site), { maxWidth: 300 });
+    // Details of the site when it is clicked, built when the popup opens so it uses the current weights
+    m.bindPopup(() => sitePopupHtml(sc, site), { maxWidth: 330 });
     // Add the site to the layer
     m.addTo(siteLayer);
     // Keep the marker for the panel list
@@ -1158,22 +1158,110 @@ function drawScenario() {
 }
 
 /**
- * HTML for the popup of one new site.
+ * 10-minute score (0–100) of one home with the current weights, using the values now in HOMES or the original values.
+ * Used for the site popups, which always describe 10-minute access whatever walking time the map shows.
+ * @param {number} i - index of the home.
+ * @param {boolean} original - true for the score without the new sites.
+ * @returns {number} score on the 0–100 scale.
+ */
+function score10(i, original) {
+  // Sum of the weights; 1 when all sliders are at zero, as in computeScores
+  const total = DOMAINS.reduce((sum, d) => sum + state.weights[d.key], 0) || 1;
+  // Start the weighted sum at zero
+  let sum = 0;
+  // Loop over the domains
+  for (const d of DOMAINS) {
+    // 10-minute domain-score column, with the no-gym column for parks when gyms are off
+    const name = d.key === "park" && !state.gyms ? "s_park_10_ng" : `s_${d.key}_10`;
+    // Original column when asked for and when the scenario changes this domain; otherwise the column in use
+    const column = original && ORIGINAL[name] ? ORIGINAL[name] : HOMES[name];
+    // Add the weighted domain score
+    sum += (state.weights[d.key] / total) * column[i];
+  }
+  // Score on the 0–100 scale
+  return 100 * sum;
+}
+
+/**
+ * Summary of the buildings within a 10-minute walk of one new site: units, mean score before and after, and access to the domain.
+ * A building that also reaches an earlier site is counted with that earlier site, as in Notebook 05.
+ * @param {object} sc - scenario record from PLANNING.
+ * @param {number} step - step number of the site.
+ * @returns {object} buildings, units, unit-weighted mean scores, and the share of units with the domain before and after (%).
+ */
+function siteArea(sc, step) {
+  // Running totals
+  const t = { homes: 0, units: 0, before: 0, after: 0, hadBefore: 0, hasAfter: 0 };
+  // Original count column of the domain
+  const nBefore = ORIGINAL[`n_${sc.domain}_10`];
+  // Count column after the new sites
+  const nAfter = HOMES[`n_${sc.domain}_10`];
+  // Loop over the homes within 800 m of a new site
+  for (let k = 0; k < sc.home_id.length; k++) {
+    // Keep only the homes first reached by this site
+    if (sc.first_site[k] !== step) continue;
+    // Row of the home in HOMES
+    const i = rowOfHome.get(sc.home_id[k]);
+    // Skip a home that is not on the map
+    if (i === undefined) continue;
+    // Dwelling units (the weight)
+    const w = HOMES.du[i];
+    // Count the building
+    t.homes += 1;
+    // Add its units
+    t.units += w;
+    // Add the unit-weighted score without the new sites
+    t.before += w * score10(i, true);
+    // Add the unit-weighted score with the new sites
+    t.after += w * score10(i, false);
+    // Units that already had the domain within 10 minutes
+    t.hadBefore += nBefore[i] > 0 ? w : 0;
+    // Units that have it after the new sites
+    t.hasAfter += nAfter[i] > 0 ? w : 0;
+  }
+  // Return means and shares (guarding against an empty site)
+  const u = t.units || 1;
+  // Return the summary
+  return { homes: t.homes, units: t.units, before: t.before / u, after: t.after / u, pctBefore: (100 * t.hadBefore) / u, pctAfter: (100 * t.hasAfter) / u };
+}
+
+/**
+ * HTML for the popup of one new site: units newly served, the score change around the site with the current weights, and why the change has this size.
  * @param {object} sc - scenario record from PLANNING.
  * @param {object} site - one entry of sc.sites.
- * @returns {string} HTML with the address and the units gained.
+ * @returns {string} HTML.
  */
 function sitePopupHtml(sc, site) {
   // Format a whole number with thousands separators
-  const fmt = (x) => x.toLocaleString("en-SG");
+  const fmt = (x) => Math.round(x).toLocaleString("en-SG");
+  // Summary of the buildings around the site
+  const a = siteArea(sc, site.step);
+  // Sum of the weights; 1 when all sliders are at zero
+  const total = DOMAINS.reduce((sum, d) => sum + state.weights[d.key], 0) || 1;
+  // Share of the scenario's domain in the total weight
+  const share = state.weights[sc.domain] / total;
+  // Points one more amenity of the domain adds, for a building below the benchmark
+  const step = (100 * share) / sc.cap;
+  // Name of the facility in lower case, e.g. "supermarket"
+  const facility = sc.site_name.replace(/^New /, "").toLowerCase();
   // Name, order and address of the site
-  return `<strong>${sc.site_name} ${site.step}</strong> (scenario)<br>${esc(site.address)}, ${esc(site.area)}<br>`
-    // Units that gain their first amenity of the domain within 10 minutes at this step
-    + `Dwelling units newly within a 10-minute walk: <strong>${fmt(site.units_gained)}</strong><br><small>HDB ${fmt(site.hdb_units)} · private ${fmt(site.private_units)}</small>`
+  return `<strong>${sc.site_name} ${site.step}</strong> (scenario)<br>${esc(site.address)}, ${esc(site.area)}`
+    // Units that gain their first amenity of the domain at this step
+    + `<p class="pop-p">Dwelling units newly within a 10-minute walk of ${sc.label.toLowerCase()}: <strong>${fmt(site.units_gained)}</strong> (HDB ${fmt(site.hdb_units)}, private ${fmt(site.private_units)})`
     // Older residents served, for the clinic scenario
-    + (site.older_gain !== undefined ? `<br><small>Estimated residents aged 65+ newly served: ${fmt(Math.round(site.older_gain))}</small>` : "")
-    // How the site was chosen
-    + `<br><small>Site ${site.step} of 5, chosen in this order by Notebook 05; each site counts only homes not already served by an earlier one.</small>`;
+    + (site.older_gain !== undefined ? `, about ${fmt(site.older_gain)} of them residents aged 65 and over` : "") + `.</p>`
+    // Table of the area around the site
+    + `<table class="popup-table"><thead><tr><th>${fmt(a.homes)} buildings within 10 min (${fmt(a.units)} units)</th><th>Now</th><th>After</th><th>Change</th></tr></thead><tbody>`
+    // Mean score row
+    + `<tr><td>Mean score (10 min, your weights)</td><td>${a.before.toFixed(1)}</td><td>${a.after.toFixed(1)}</td><td>+${(a.after - a.before).toFixed(1)}</td></tr>`
+    // Access row
+    + `<tr><td>Units with ${sc.label.toLowerCase()} within 10 min (%)</td><td>${a.pctBefore.toFixed(0)}</td><td>${a.pctAfter.toFixed(0)}</td><td>+${(a.pctAfter - a.pctBefore).toFixed(0)}</td></tr></tbody></table>`
+    // Why the score change has this size
+    + `<p class="pop-note">Why this change: the ${sc.label} score counts amenities up to a benchmark of ${sc.cap}, so one new ${facility} adds 1/${sc.cap} of that score. With ${sc.label} at ${Math.round(100 * share)}% of the weight, this is ${step.toFixed(1)} points for each building; buildings that reach two new sites gain twice as much, and buildings already at the benchmark gain nothing. `
+    // What matters more than the score
+    + `The larger effect is access: the share of units with ${sc.label.toLowerCase()} within a 10-minute walk.</p>`
+    // How the buildings were assigned to a site
+    + `<p class="pop-note">Buildings that also reach an earlier site are counted with that site. Site ${site.step} of 5, in the order chosen by Notebook 05.</p>`;
 }
 
 /**
@@ -1240,7 +1328,7 @@ function renderScenarioPanel() {
     // Before-and-after table
     + `<table class="scenario-table"><caption>Units with ${sc.label.toLowerCase()} within 10 min (%)</caption><thead><tr><th></th><th>Now</th><th>After</th><th>Change</th></tr></thead><tbody>${rows}</tbody></table>`
     // Site list heading
-    + `<p class="hint">New sites, in the order chosen. Click one to show it on the map.</p>`
+    + `<p class="hint">New sites, in the order chosen. Click one, here or on the map, to see how scores and access change around it.</p>`
     // Site list
     + `<ul class="poi-list site-list">${sites}</ul>`
     // What the map shows
@@ -1344,6 +1432,8 @@ function update() {
   renderSelection();
   // Refresh the planning-scenario panel (its note depends on the walking time)
   renderScenarioPanel();
+  // Refresh an open site popup so it shows the score change with the new weights
+  for (const m of siteMarkers.values()) if (m.isPopupOpen()) m.getPopup().update();
 }
 
 // Draw everything once at the start

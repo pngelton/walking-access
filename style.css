@@ -1010,3 +1010,19 @@ select {
   /* Space between the lines */
   line-height: 1.6;
 }
+
+/* Paragraphs inside a site popup */
+.pop-p {
+  /* Space around */
+  margin: 6px 0;
+}
+
+/* Explanatory notes inside a site popup */
+.pop-note {
+  /* Small text */
+  font-size: 11px;
+  /* Secondary grey that stays readable on the white popup */
+  color: #5b6168;
+  /* Space around */
+  margin: 6px 0 0;
+}
