@@ -681,6 +681,70 @@ select {
   font-size: 9px;
 }
 
+/* Map key of a selected building: keep it narrow */
+.selection-key {
+  /* Width limit, so the notes wrap */
+  max-width: 250px;
+}
+
+/* One row of the map key: sample on the left, label on the right */
+.key-row {
+  /* Sample and label side by side */
+  display: flex;
+  /* Centre them vertically */
+  align-items: center;
+  /* Space between sample and label */
+  gap: 8px;
+  /* Space between rows */
+  margin: 3px 0;
+}
+
+/* Lettered amenity square in the map key, as drawn on the map */
+.key-symbol {
+  /* Fixed-size box */
+  display: inline-flex;
+  /* Width of the symbol */
+  width: 18px;
+  /* Height of the symbol */
+  height: 18px;
+  /* Centre the letter horizontally */
+  justify-content: center;
+  /* Centre the letter vertically */
+  align-items: center;
+  /* Rounded square */
+  border-radius: 4px;
+  /* White letter */
+  color: #ffffff;
+  /* Small bold letter */
+  font: 700 11px/1 system-ui, sans-serif;
+  /* Do not shrink in the row */
+  flex: none;
+}
+
+/* Orange ring of the selected building in the map key */
+.key-ring {
+  /* Fixed-size circle */
+  display: inline-block;
+  /* Width */
+  width: 14px;
+  /* Height */
+  height: 14px;
+  /* Orange ring, as on the map */
+  border: 3px solid #c4581c;
+  /* Round */
+  border-radius: 50%;
+  /* Do not shrink in the row */
+  flex: none;
+  /* Centre it in the column used by the outline samples */
+  margin: 0 3px;
+}
+
+/* SVG samples in the map key */
+.key-row svg {
+  /* Do not shrink in the row */
+  flex: none;
+}
+
 /* Narrow screens: put the panel above the map */
 @media (max-width: 760px) {
   /* One column */
@@ -718,9 +782,193 @@ select {
     /* Swatch height */
     height: 14px;
   }
+  /* On small screens only one key fits: the score legend is hidden while a building is selected */
+  body.selecting .score-legend {
+    /* Not shown */
+    display: none;
+  }
+  /* On small screens the selected-building key shows only the outline rows; the panel explains the rest */
+  .selection-key .key-row:has(.key-symbol), .selection-key .legend-end {
+    /* Not shown */
+    display: none;
+  }
   /* Drop the explanatory lines of the legend on small screens (the panel explains the score) */
   .legend-sub {
     /* Not shown */
     display: none;
   }
+}
+
+/* ---------------------------------------------------------------------------
+   Amenity groups of a selected building and the planning scenario
+   --------------------------------------------------------------------------- */
+
+/* Heading of a closed or open amenity group: label on the left, nearest time on the right */
+.poi-group summary {
+  /* Label and time on one line */
+  display: flex;
+  /* Centre them vertically */
+  align-items: center;
+  /* Space around the heading, so it is easy to click */
+  padding: 4px 4px;
+  /* Rounded highlight */
+  border-radius: 4px;
+}
+
+/* Highlight of a group heading under the mouse */
+.poi-group summary:hover {
+  /* Highlight colour from the theme */
+  background: var(--hover);
+}
+
+/* Domain name and count take the free space */
+.poi-label {
+  /* Fill the line */
+  flex: 1;
+}
+
+/* Nearest walking time in the group heading */
+.poi-near {
+  /* Normal weight, so it reads as secondary */
+  font-weight: 400;
+  /* Smaller text */
+  font-size: 12px;
+  /* Secondary colour */
+  color: var(--muted);
+  /* Digits of equal width */
+  font-variant-numeric: tabular-nums;
+}
+
+/* Scenario options stacked one per line */
+.scenario-options .check {
+  /* One option per line */
+  display: block;
+}
+
+/* Line describing a home's change under the scenario */
+.scenario-line {
+  /* Bold, so it stands out in the popup and the panel */
+  font-weight: 600;
+}
+
+/* Before-and-after table of the scenario */
+.scenario-table {
+  /* Full panel width */
+  width: 100%;
+  /* Single lines between cells */
+  border-collapse: collapse;
+  /* Digits of equal width */
+  font-variant-numeric: tabular-nums;
+  /* Space around */
+  margin: 6px 0;
+}
+
+/* Cells of the scenario table, and the captions of both tables */
+.scenario-table th, .scenario-table td {
+  /* Inner spacing */
+  padding: 3px 2px;
+  /* Line under each row */
+  border-bottom: 1px solid var(--line);
+  /* Numbers aligned right */
+  text-align: right;
+}
+
+/* Row labels of the scenario table */
+.scenario-table th:first-child, .scenario-table td:first-child {
+  /* Labels aligned left */
+  text-align: left;
+}
+
+/* Captions of the scenario and summary tables */
+.scenario-table caption, #summary caption {
+  /* Left-aligned */
+  text-align: left;
+  /* Smaller text */
+  font-size: 12px;
+  /* Secondary colour */
+  color: var(--muted);
+  /* Space below */
+  padding-bottom: 2px;
+}
+
+/* Numbered square of a new site, in the panel list and the legend */
+.site-num, .key-site {
+  /* Fixed-size box */
+  display: inline-flex;
+  /* Do not shrink in the list row */
+  flex: none;
+  /* Width */
+  width: 18px;
+  /* Height */
+  height: 18px;
+  /* Centre the number horizontally */
+  justify-content: center;
+  /* Centre the number vertically */
+  align-items: center;
+  /* Slightly rounded square */
+  border-radius: 4px;
+  /* White number */
+  color: #ffffff;
+  /* Small bold number */
+  font: 700 11px/1 system-ui, sans-serif;
+}
+
+/* Space between the legend's site symbol and its label */
+.key-site {
+  /* Space to the label */
+  margin-right: 6px;
+}
+
+/* Site list rows: number, address, units */
+.site-list li {
+  /* Centre the parts vertically */
+  align-items: center;
+}
+
+/* Address column of a site row takes the free space */
+.site-list li > span:nth-child(2) {
+  /* Fill the line */
+  flex: 1;
+}
+
+/* New-site symbol on the map (Leaflet adds this class to the symbol's box) */
+.site-icon span {
+  /* Fill the symbol's box */
+  display: flex;
+  /* Full width of the box */
+  width: 100%;
+  /* Full height of the box */
+  height: 100%;
+  /* Centre the number horizontally */
+  justify-content: center;
+  /* Centre the number vertically */
+  align-items: center;
+  /* Slightly rounded square */
+  border-radius: 5px;
+  /* Thick white outline so the site stands out from amenity symbols */
+  border: 3px solid #ffffff;
+  /* Include the outline in the size */
+  box-sizing: border-box;
+  /* White number */
+  color: #ffffff;
+  /* Bold number */
+  font: 700 13px/1 system-ui, sans-serif;
+  /* Stronger shadow than the amenity symbols */
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.6);
+}
+
+/* Ring sample for newly served homes in the legend */
+.key-ring-small {
+  /* Fixed-size circle */
+  display: inline-block;
+  /* Width */
+  width: 12px;
+  /* Height */
+  height: 12px;
+  /* Ring; its colour is set by app.js to the domain colour */
+  border: 2px solid;
+  /* Circle */
+  border-radius: 50%;
+  /* Space to the label */
+  margin: 0 8px 0 2px;
 }

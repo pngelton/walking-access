@@ -71,6 +71,8 @@ const state = {
   selected: null,
   // Whether the other buildings are hidden while a building is selected
   hideOthers: false,
+  // Planning scenario shown ("" = current situation, "supermarket" or "clinic", from data_planning.js)
+  scenario: "",
 };
 
 /**
@@ -329,8 +331,14 @@ function popupHtml(i) {
     const n10 = HOMES[d.key === "park" && !state.gyms ? "n_park_10_ng" : `n_${d.key}_10`][i];
     // Walking time to the nearest amenity; null when farther than 30 minutes
     const near = HOMES[`nearest_${d.key}_min`][i];
+    // Change of this home under the planning scenario, if any
+    const info = scenarioInfo.get(i);
+    // A home newly served by a scenario site has a new amenity within 10 minutes; its exact walking time is not known
+    const newSite = info && info.newly && PLANNING[state.scenario].domain === d.key;
+    // Text of the nearest-time cell
+    const nearText = newSite ? "&le;10 (new site)" : near === null ? "&gt;30" : near.toFixed(1);
     // Build the row
-    return `<tr><td>${d.label}</td><td>${n5}</td><td>${n10}</td><td>${near === null ? "&gt;30" : near.toFixed(1)}</td></tr>`;
+    return `<tr><td>${d.label}</td><td>${n5}</td><td>${n10}</td><td>${nearText}</td></tr>`;
   // Join the rows into one string
   }).join("");
   // Assemble the popup, starting with the address and postal code
@@ -341,10 +349,14 @@ function popupHtml(i) {
     + `${titleCase(HOMES.subzone[i])}, ${titleCase(HOMES.pln_area[i])}<br>`
     // Score under the current settings, with its meaning
     + `Walking-access score: <strong>${scores[i].toFixed(1)} / 100</strong> (${state.t} min, your weights)<br><small>Higher scores mean better access to daily needs. See "How is the score calculated?" in the panel.</small><br>`
+    // Change under the planning scenario, if this home is affected
+    + scenarioLine(i, "popup")
     // Table of counts and nearest times
     + `<table class="popup-table"><thead><tr><th>Domain</th><th>5 min</th><th>10 min</th><th>Nearest (min)</th></tr></thead><tbody>${rows}</tbody></table>`
     // How the times are measured
-    + `<small>Counts and times follow walking routes on the pedestrian network, not straight lines.</small>`;
+    + `<small>Counts and times follow walking routes on the pedestrian network, not straight lines.</small>`
+    // What the scenario changes, for an affected home
+    + (scenarioInfo.has(i) ? `<br><small>The scenario changes the 10-minute counts only; 5-minute counts and nearest times refer to existing amenities.</small>` : "");
 }
 
 /**
@@ -628,7 +640,9 @@ function renderSelection() {
   // Address line of the selected building
   const head = `<p class="sel-address"><strong>${esc(HOMES.address[i])}</strong>, Singapore ${HOMES.postal[i]}</p>`
     // Housing group and type
-    + `<p class="hint">${HOMES.housing_group[i]} (${HOMES.subtype[i]}) · ${HOMES.du[i]} units · score ${scores[i].toFixed(1)}</p>`;
+    + `<p class="hint">${HOMES.housing_group[i]} (${HOMES.subtype[i]}) · ${HOMES.du[i]} units · score ${scores[i].toFixed(1)}</p>`
+    // Change under the planning scenario, if this home is affected
+    + scenarioLine(i, "panel");
   // Route data still loading
   if (reachReady === null) { body.innerHTML = head + `<p class="hint">Loading walking routes…</p>`; return; }
   // Route data not available (for example in the single-file version of the map)
@@ -658,19 +672,21 @@ function renderSelection() {
     // Keep the dot for the panel list
     selectionMarkers.set(j, dot);
   }
-  // One folding group per domain, in the usual domain order
+  // One folding group per domain, in the usual domain order; each group stays closed until it is clicked
   const groups = DOMAINS.map((d) => {
     // Amenities of this domain
     const list = items.filter((e) => AMENITIES.domain[e.j] === d.label);
     // One list item per amenity: name and type on the left, time and distance on the right
     const lis = list.map(({ j, m }) => `<li data-j="${j}" class="${m <= 5 * M_PER_MIN ? "" : "poi-far"}"><span>${esc(amenityName(j))}<br><small>${esc(AMENITIES.sub_category[j])}</small></span><span class="poi-time">${(m / M_PER_MIN).toFixed(1)} min<br><small>${m} m</small></span></li>`).join("");
-    // Group heading with the domain colour and the count; groups with none say so
-    return `<details class="poi-group" ${list.length ? "open" : ""}><summary><span class="swatch" style="background:${DOMAIN_COLOURS[d.label]}"></span>${d.label} (${list.length})</summary>`
+    // Walking time to the nearest amenity of this domain in the list (the list is sorted nearest first)
+    const nearest = list.length ? `nearest ${(list[0].m / M_PER_MIN).toFixed(1)} min` : "none";
+    // Group heading with the domain colour, the count and the nearest time; the group is closed until clicked
+    return `<details class="poi-group"><summary><span class="swatch" style="background:${DOMAIN_COLOURS[d.label]}"></span><span class="poi-label">${d.label} (${list.length})</span><span class="poi-near">${nearest}</span></summary>`
       // The list, or a note when nothing is in reach
       + (list.length ? `<ul class="poi-list">${lis}</ul>` : `<p class="hint">None within ${state.t} min.</p>`) + `</details>`;
   }).join("");
   // Fill the panel section
-  body.innerHTML = head + `<p class="hint">Amenities within ${state.t} min (${limit} m) by walking route, nearest first.${state.t === 10 ? " Larger symbols and darker times are within 5 min." : ""}</p>` + groups;
+  body.innerHTML = head + `<p class="hint">Amenities within ${state.t} min (${limit} m) by walking route. Click a domain to open its list, nearest first.${state.t === 10 ? " Larger symbols and darker times are within 5 min." : ""}${state.scenario ? " The lists show existing amenities only, not the new scenario sites." : ""}</p>` + groups;
 }
 
 // A click on an amenity in the panel list shows it on the map
@@ -708,6 +724,8 @@ function applyHideOthers() {
   for (const g of ["HDB", "Private"]) {
     // Show the group only when it is ticked in the Housing filter and not hidden by the switch
     if (state.show[g] && !hide) groupLayers[g].addTo(map); else map.removeLayer(groupLayers[g]);
+    // The rings of newly served homes follow the same rule
+    if (state.show[g] && !hide) ringLayers[g].addTo(map); else map.removeLayer(ringLayers[g]);
   }
 }
 
@@ -746,7 +764,9 @@ function drawLegend(div) {
     // Bottom direction label
     + `<div class="legend-end">Lower access</div>`
     // Current walking time
-    + `<div class="legend-sub">Within ${state.t} min (${state.t * M_PER_MIN} m) on foot</div>`;
+    + `<div class="legend-sub">Within ${state.t} min (${state.t * M_PER_MIN} m) on foot</div>`
+    // Symbols of the planning scenario, while one is shown
+    + scenarioLegendRows();
 }
 // Add the legend to the map
 legend.addTo(map);
@@ -1032,7 +1052,251 @@ resultList.addEventListener("click", (e) => {
 });
 
 // ---------------------------------------------------------------------------
-// 7. Redraw
+// 7. Planning scenarios (Notebook 05 sites, written to data_planning.js by Notebook 06b)
+// ---------------------------------------------------------------------------
+
+// True when the planning data file was loaded
+const HAS_PLANNING = typeof PLANNING !== "undefined";
+// Row of each home in HOMES, looked up by its home_id
+const rowOfHome = new Map(HOMES.home_id.map((id, i) => [id, i]));
+// Original 10-minute counts and domain scores of the domains a scenario can change, kept so the current situation can be restored
+const ORIGINAL = {};
+// Loop over the scenarios in the planning file (none when the file is missing)
+for (const sc of HAS_PLANNING ? Object.values(PLANNING) : []) {
+  // Keep a copy of the count column, e.g. n_groc_10
+  ORIGINAL[`n_${sc.domain}_10`] = HOMES[`n_${sc.domain}_10`].slice();
+  // Keep a copy of the domain-score column, e.g. s_groc_10
+  ORIGINAL[`s_${sc.domain}_10`] = HOMES[`s_${sc.domain}_10`].slice();
+}
+// Change of each affected home under the current scenario: row -> {before, after, newly}
+const scenarioInfo = new Map();
+// Layer with the new sites of the current scenario
+const siteLayer = L.layerGroup().addTo(map);
+// Rings around homes that gain their first amenity of the domain, one layer per housing group
+const ringLayers = { HDB: L.layerGroup().addTo(map), Private: L.layerGroup().addTo(map) };
+// Marker of each new site, by its step number, so the panel list can open it
+const siteMarkers = new Map();
+
+/**
+ * Put the counts and domain scores of the chosen scenario into HOMES, or restore the current situation.
+ * Only the 10-minute values change: Notebook 05 measures the new sites within 10 minutes (800 m).
+ * The domain score is recomputed as min(count, benchmark) / benchmark, the rule of Notebook 06, rounded to three decimals.
+ * @returns {void}
+ */
+function applyScenario() {
+  // Restore every changed column to its original values
+  for (const name of Object.keys(ORIGINAL)) HOMES[name] = ORIGINAL[name].slice();
+  // Forget the changes of the previous scenario
+  scenarioInfo.clear();
+  // Stop here for the current situation
+  if (!state.scenario) return;
+  // Data of the chosen scenario
+  const sc = PLANNING[state.scenario];
+  // Count column of its domain
+  const n = HOMES[`n_${sc.domain}_10`];
+  // Domain-score column of its domain
+  const s = HOMES[`s_${sc.domain}_10`];
+  // Loop over the homes within 800 m of a new site
+  for (let k = 0; k < sc.home_id.length; k++) {
+    // Row of the home in HOMES
+    const i = rowOfHome.get(sc.home_id[k]);
+    // Skip a home that is not on the map (should not happen; Notebook 06b checks the ids)
+    if (i === undefined) continue;
+    // Remember the change for the popup and the panel
+    scenarioInfo.set(i, { before: n[i], after: sc.n_after[k], newly: sc.newly[k] === 1 });
+    // Count after the new sites
+    n[i] = sc.n_after[k];
+    // Domain score after the new sites, rounded to three decimals like the values written by Notebook 06
+    s[i] = Math.round((1000 * Math.min(n[i], sc.cap)) / sc.cap) / 1000;
+  }
+}
+
+/**
+ * Symbol of a new site: a numbered square in the domain colour.
+ * @param {object} sc - scenario record from PLANNING.
+ * @param {number} step - order in which Notebook 05 chose the site (1–5).
+ * @returns {L.DivIcon} Leaflet icon.
+ */
+function siteIcon(sc, step) {
+  // Square with the step number, coloured like the domain's amenity symbols
+  return L.divIcon({ className: "site-icon", html: `<span style="background:${DOMAIN_COLOURS[sc.label]}">${step}</span>`, iconSize: [26, 26] });
+}
+
+/**
+ * Draw the new sites and the rings of newly served homes for the current scenario.
+ * @returns {void}
+ */
+function drawScenario() {
+  // Remove the sites of the previous scenario
+  siteLayer.clearLayers();
+  // Forget their markers
+  siteMarkers.clear();
+  // Remove the rings of both housing groups
+  for (const g of ["HDB", "Private"]) ringLayers[g].clearLayers();
+  // Nothing to draw for the current situation
+  if (!state.scenario) return;
+  // Data of the chosen scenario
+  const sc = PLANNING[state.scenario];
+  // Loop over the affected homes
+  for (const [i, info] of scenarioInfo) {
+    // Only homes that gain their first amenity of the domain get a ring
+    if (!info.newly) continue;
+    // Ring in the domain colour around the home's dot
+    L.circleMarker([HOMES.lat[i], HOMES.lon[i]], { radius: 7, color: DOMAIN_COLOURS[sc.label], weight: 2, fill: false, interactive: false }).addTo(ringLayers[HOMES.housing_group[i]]);
+  }
+  // Loop over the new sites
+  for (const site of sc.sites) {
+    // Numbered square at the site, drawn above the home dots
+    const m = L.marker([site.lat, site.lon], { icon: siteIcon(sc, site.step), title: `${sc.site_name} ${site.step}: ${site.address}`, zIndexOffset: 2000 });
+    // Details of the site when it is clicked
+    m.bindPopup(sitePopupHtml(sc, site), { maxWidth: 300 });
+    // Add the site to the layer
+    m.addTo(siteLayer);
+    // Keep the marker for the panel list
+    siteMarkers.set(site.step, m);
+  }
+}
+
+/**
+ * HTML for the popup of one new site.
+ * @param {object} sc - scenario record from PLANNING.
+ * @param {object} site - one entry of sc.sites.
+ * @returns {string} HTML with the address and the units gained.
+ */
+function sitePopupHtml(sc, site) {
+  // Format a whole number with thousands separators
+  const fmt = (x) => x.toLocaleString("en-SG");
+  // Name, order and address of the site
+  return `<strong>${sc.site_name} ${site.step}</strong> (scenario)<br>${esc(site.address)}, ${esc(site.area)}<br>`
+    // Units that gain their first amenity of the domain within 10 minutes at this step
+    + `Dwelling units newly within a 10-minute walk: <strong>${fmt(site.units_gained)}</strong><br><small>HDB ${fmt(site.hdb_units)} · private ${fmt(site.private_units)}</small>`
+    // Older residents served, for the clinic scenario
+    + (site.older_gain !== undefined ? `<br><small>Estimated residents aged 65+ newly served: ${fmt(Math.round(site.older_gain))}</small>` : "")
+    // How the site was chosen
+    + `<br><small>Site ${site.step} of 5, chosen in this order by Notebook 05; each site counts only homes not already served by an earlier one.</small>`;
+}
+
+/**
+ * One line describing the scenario's change at a home, for its popup or the panel; empty when the home is not affected.
+ * @param {number} i - index of the home.
+ * @param {string} where - "popup" or "panel" (sets the HTML wrapper).
+ * @returns {string} HTML line, or "".
+ */
+function scenarioLine(i, where) {
+  // Change of this home under the current scenario
+  const info = scenarioInfo.get(i);
+  // Nothing to say for the current situation or an unaffected home
+  if (!info) return "";
+  // Data of the chosen scenario
+  const sc = PLANNING[state.scenario];
+  // Text of the change, e.g. "Groceries within 10 min: 0 → 1 (newly served)"
+  const text = `Scenario: ${sc.label.toLowerCase()} within 10 min ${info.before} &rarr; ${info.after}${info.newly ? " (newly served)" : ""}`;
+  // Popup line or panel paragraph
+  return where === "popup" ? `<span class="scenario-line">${text}</span><br>` : `<p class="hint scenario-line">${text}</p>`;
+}
+
+/**
+ * Legend rows for the scenario symbols, shown while a scenario is active.
+ * @returns {string} HTML rows, or "" for the current situation.
+ */
+function scenarioLegendRows() {
+  // Nothing to add for the current situation
+  if (!state.scenario) return "";
+  // Data of the chosen scenario
+  const sc = PLANNING[state.scenario];
+  // Colour of the domain
+  const c = DOMAIN_COLOURS[sc.label];
+  // Heading, site symbol and ring
+  return `<div class="legend-end">Scenario</div>`
+    // New-site symbol
+    + `<div class="legend-row"><span class="key-site" style="background:${c}">1</span>${sc.site_name}</div>`
+    // Ring of newly served homes
+    + `<div class="legend-row"><span class="key-ring-small" style="border-color:${c}"></span>Newly served home</div>`;
+}
+
+/**
+ * Fill the planning-scenario section of the panel for the chosen scenario.
+ * @returns {void}
+ */
+function renderScenarioPanel() {
+  // Body of the section
+  const body = document.getElementById("scenario-body");
+  // Nothing to show when the planning file is missing or the current situation is chosen
+  if (!HAS_PLANNING || !state.scenario) { body.innerHTML = ""; return; }
+  // Data of the chosen scenario
+  const sc = PLANNING[state.scenario];
+  // Format a whole number with thousands separators
+  const fmt = (x) => x.toLocaleString("en-SG");
+  // One clickable list item per site
+  const sites = sc.sites.map((site) => `<li data-step="${site.step}"><span class="site-num" style="background:${DOMAIN_COLOURS[sc.label]}">${site.step}</span><span>${esc(site.address)}<br><small>${esc(site.area)}</small></span><span class="poi-time">+${fmt(site.units_gained)}<br><small>units</small></span></li>`).join("");
+  // Share of units with access before and after, per housing group
+  const rows = ["HDB", "Private"].map((g) => `<tr><td>${g}</td><td>${sc.access[g].before.toFixed(1)}</td><td>${sc.access[g].after.toFixed(1)}</td><td>+${(sc.access[g].after - sc.access[g].before).toFixed(1)}</td></tr>`).join("");
+  // Note shown when the map is at 5 minutes, where the scenario changes nothing
+  const note5 = state.t === 5 ? `<p class="note">The scenario changes 10-minute access only. Switch the walking time to 10 min to see its effect.</p>` : "";
+  // Fill the section
+  body.innerHTML = note5 + `<p class="hint">${esc(sc.about)}</p>`
+    // Totals of homes and units newly served
+    + `<p>Newly served: <strong>${fmt(sc.units_newly)} units</strong> in ${fmt(sc.homes_newly)} buildings (HDB ${fmt(sc.units_newly_hdb)}, private ${fmt(sc.units_newly_private)}). Rings mark these buildings on the map.</p>`
+    // Before-and-after table
+    + `<table class="scenario-table"><caption>Units with ${sc.label.toLowerCase()} within 10 min (%)</caption><thead><tr><th></th><th>Now</th><th>After</th><th>Change</th></tr></thead><tbody>${rows}</tbody></table>`
+    // Site list heading
+    + `<p class="hint">New sites, in the order chosen. Click one to show it on the map.</p>`
+    // Site list
+    + `<ul class="poi-list site-list">${sites}</ul>`
+    // What the map shows
+    + `<p class="hint">Scores, colours and the comparison table above use the counts after the new sites. ${fmt(sc.homes_reached)} buildings lie within 800 m of a new site; the rest are unchanged.</p>`;
+}
+
+/**
+ * Switch to another scenario: change the data, draw the sites, and redraw the map and panel.
+ * @param {string} key - "", "supermarket" or "clinic".
+ * @returns {void}
+ */
+function setScenario(key) {
+  // Store the choice
+  state.scenario = key;
+  // A scenario changes 10-minute access, so show 10 minutes when one is chosen
+  if (key && state.t !== 10) {
+    // Store 10 minutes
+    state.t = 10;
+    // Tick the 10-minute radio button
+    document.querySelector('input[name="threshold"][value="10"]').checked = true;
+  }
+  // Put the scenario's counts and scores into HOMES
+  applyScenario();
+  // Draw the sites and rings
+  drawScenario();
+  // Recompute and redraw everything
+  update();
+  // Show all five sites when a scenario is chosen
+  if (key) map.fitBounds(L.latLngBounds(PLANNING[key].sites.map((site) => [site.lat, site.lon])).pad(0.15), { maxZoom: 13 });
+}
+
+// Section of the panel with the scenario switch
+const scenarioSection = document.getElementById("planning-section");
+// Hide the section when the planning file was not loaded
+scenarioSection.hidden = !HAS_PLANNING;
+// Scenario radio buttons
+for (const r of document.querySelectorAll('input[name="scenario"]')) {
+  // Switch the scenario when a button is chosen
+  r.addEventListener("change", (e) => setScenario(e.target.value));
+}
+// A click on a site in the panel list shows it on the map
+document.getElementById("scenario-body").addEventListener("click", (e) => {
+  // The list item that was clicked
+  const li = e.target.closest("li[data-step]");
+  // Ignore clicks elsewhere
+  if (!li) return;
+  // Marker of that site
+  const m = siteMarkers.get(Number(li.dataset.step));
+  // Move the map to the site at street level or closer
+  map.setView(m.getLatLng(), Math.max(map.getZoom(), 16));
+  // Open its details
+  m.openPopup();
+});
+
+// ---------------------------------------------------------------------------
+// 8. Redraw
 // ---------------------------------------------------------------------------
 
 /**
@@ -1057,8 +1321,10 @@ function update() {
   const sign = (x) => (x < 0 ? "&minus;" : "+") + Math.abs(x).toFixed(1);
   // Fill in the summary table
   document.getElementById("summary").innerHTML =
+    // Caption naming the planning scenario, while one is shown
+    (state.scenario ? `<caption>With the scenario: ${PLANNING[state.scenario].title.toLowerCase()}</caption>` : "")
     // Header row
-    `<thead><tr><th></th><th>HDB</th><th>Private</th><th>Gap</th></tr></thead><tbody>`
+    + `<thead><tr><th></th><th>HDB</th><th>Private</th><th>Gap</th></tr></thead><tbody>`
     // Mean score row
     + `<tr><td>Mean score (${state.t} min)</td><td>${f(s.mean.HDB)}</td><td>${f(s.mean.Private)}</td><td>${sign(s.gap)}</td></tr>`
     // Within-subzone row
@@ -1076,6 +1342,8 @@ function update() {
   document.getElementById("cap-park").textContent = state.gyms ? CAPS.park : PARK_CAP_NO_GYMS;
   // Redraw the selected building's amenities for the new walking time or gym setting
   renderSelection();
+  // Refresh the planning-scenario panel (its note depends on the walking time)
+  renderScenarioPanel();
 }
 
 // Draw everything once at the start

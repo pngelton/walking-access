@@ -129,6 +129,25 @@
       <p class="hint">Means are weighted by dwelling units. "Within subzone" compares HDB and private homes only inside the 124 subzones that have both.</p>
     </section>
 
+    <!-- Planning scenarios from Notebook 05; hidden by app.js when data_planning.js is missing -->
+    <section id="planning-section">
+      <!-- Section heading -->
+      <h2>Planning scenario</h2>
+      <!-- What the section does -->
+      <p class="hint">See how five new facilities, chosen in Notebook 05, would change walking access within 10 minutes.</p>
+      <!-- Three options: the current situation and the two scenarios -->
+      <div class="scenario-options" role="radiogroup" aria-label="Planning scenario">
+        <!-- Current situation, selected at start -->
+        <label class="check"><input type="radio" name="scenario" value="" checked> Current situation</label>
+        <!-- Five new supermarkets in HDB commercial blocks -->
+        <label class="check"><input type="radio" name="scenario" value="supermarket"> Five new supermarkets</label>
+        <!-- Five new clinics, chosen for older residents -->
+        <label class="check"><input type="radio" name="scenario" value="clinic"> Five new clinics (older residents)</label>
+      </div>
+      <!-- Sites, totals and before-and-after table, filled in by app.js -->
+      <div id="scenario-body" aria-live="polite"></div>
+    </section>
+
     <!-- Amenity layer chooser -->
     <section>
       <!-- Section heading -->
@@ -150,6 +169,8 @@
   <script src="data_homes.js"></script>
   <!-- Amenity records written by Notebook 06 (defines AMENITIES) -->
   <script src="data_amenities.js"></script>
+  <!-- Planning scenarios written by Notebook 06b from the Notebook 05 sites (defines PLANNING) -->
+  <script src="data_planning.js"></script>
   <!-- Map logic; it loads data_reach.js (walking routes from Notebook 07) after the map is drawn -->
   <script src="app.js"></script>
 </body>
