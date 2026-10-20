@@ -972,3 +972,41 @@ select {
   /* Space to the label */
   margin: 0 8px 0 2px;
 }
+
+/* Course and project title at the top of the panel */
+.project-title {
+  /* Small text */
+  font-size: 12px;
+  /* Secondary colour */
+  color: var(--muted);
+  /* Comfortable line height for the long title */
+  line-height: 1.4;
+  /* Line under the title, separating it from the map heading */
+  border-bottom: 1px solid var(--line);
+  /* Space between the title and the line */
+  padding-bottom: 8px;
+  /* Space below */
+  margin: 0 0 10px;
+}
+
+/* Project title in the main text colour */
+.project-title strong {
+  /* Main text colour */
+  color: var(--ink);
+}
+
+/* List of team members */
+.team {
+  /* No bullets */
+  list-style: none;
+  /* No indent */
+  padding: 0;
+  /* No extra space */
+  margin: 0;
+  /* Two columns, so the list stays short */
+  columns: 2;
+  /* Text size of the panel hints */
+  font-size: 13px;
+  /* Space between the lines */
+  line-height: 1.6;
+}
