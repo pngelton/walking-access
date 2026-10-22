@@ -16,6 +16,15 @@
 <body>
   <!-- Side panel with the controls and the summary -->
   <aside id="panel">
+    <!-- Phones only: handle at the top of the bottom sheet; a tap or a swipe opens or closes the panel (hidden on wider screens by style.css) -->
+    <button type="button" id="sheet-handle" aria-controls="panel" aria-expanded="false">
+      <!-- Grip bar that shows the sheet can be pulled -->
+      <span class="sheet-grip" aria-hidden="true"></span>
+      <!-- Short page title, so the page is named while the panel is closed -->
+      <span class="sheet-title">Walking access to daily needs</span>
+      <!-- What a tap will do; the text is set by app.js -->
+      <span class="sheet-action" id="sheet-action">Show controls</span>
+    </button>
     <!-- Course and project title -->
     <p class="project-title">GE5219 Spatial Programming · Final Project<br><strong>A 5- and 10-Minute Network Accessibility Assessment of HDB and Private Residential Buildings in Singapore: Mapping Walking Accessibility at Building Level</strong></p>
     <!-- Page heading -->
@@ -23,8 +32,8 @@
     <!-- One-sentence description of the map -->
     <p class="lead">Each dot is a residential building. Its colour shows its walking-access score from 0 to 100: higher scores mean better access on foot to food, groceries, healthcare, parks and public transport. Walking distances follow the pedestrian network, not straight lines.</p>
 
-    <!-- Search for a building -->
-    <section>
+    <!-- Search for a building (the id lets phones show this section first) -->
+    <section id="search-section">
       <!-- Section heading -->
       <h2><label for="search">Find a building</label></h2>
       <!-- Search box: postal code, address or condominium name -->

@@ -575,6 +575,17 @@ function amenityPopupHtml(j, m) {
 }
 
 /**
+ * Widest a popup may be: the usual width, or less on a phone so the popup fits on the screen.
+ * On screens wider than 450 px this returns the usual width unchanged.
+ * @param {number} w - usual maximum width in pixels.
+ * @returns {number} maximum width in pixels.
+ */
+function popupWidth(w) {
+  // Leave 110 px for the popup frame, the zoom buttons and the map edges
+  return Math.min(w, window.innerWidth - 110);
+}
+
+/**
  * Select a home: mark it, open its popup and show its reachable amenities.
  * @param {number} i - index of the home.
  * @returns {void}
@@ -585,11 +596,14 @@ function selectHome(i) {
   // Draw the ring around the home
   foundRing.setLatLng([HOMES.lat[i], HOMES.lon[i]]).addTo(map);
   // Centre the map on the home, zooming in to street level if the map is further out
-  map.setView([HOMES.lat[i], HOMES.lon[i]], Math.max(map.getZoom(), 16));
+  // (on phones without animation, so the popup opened below is placed on the final view and fits the small map)
+  map.setView([HOMES.lat[i], HOMES.lon[i]], Math.max(map.getZoom(), 16), NARROW.matches ? { animate: false } : undefined);
   // Draw the amenities, outlines and panel list
   renderSelection();
+  // Phones: close the sheet so the map and popup are visible, and offer the details on the handle
+  sheetAfterSelect();
   // Open the home's details
-  markers[i].bindPopup(popupHtml(i), { maxWidth: 340 }).openPopup();
+  markers[i].bindPopup(popupHtml(i), { maxWidth: popupWidth(340) }).openPopup();
 }
 
 /**
@@ -605,6 +619,8 @@ function clearSelection() {
   map.closePopup();
   // Remove the amenities and outlines, and hide the panel section
   renderSelection();
+  // Phones: the handle offers the controls again
+  sheetLabel();
 }
 
 /**
@@ -666,7 +682,7 @@ function renderSelection() {
     // Symbol at the amenity's location, with its name as a hover label
     const dot = L.marker([AMENITIES.lat[j], AMENITIES.lon[j]], { icon, title: amenityName(j), zIndexOffset: near ? 1000 : 0 });
     // Details when the dot is clicked
-    dot.bindPopup(amenityPopupHtml(j, m), { maxWidth: 300 });
+    dot.bindPopup(amenityPopupHtml(j, m), { maxWidth: popupWidth(300) });
     // Add the dot to the selection layer
     dot.addTo(selectionLayer);
     // Keep the dot for the panel list
@@ -1149,7 +1165,7 @@ function drawScenario() {
     // Numbered square at the site, drawn above the home dots
     const m = L.marker([site.lat, site.lon], { icon: siteIcon(sc, site.step), title: `${sc.site_name} ${site.step}: ${site.address}`, zIndexOffset: 2000 });
     // Details of the site when it is clicked, built when the popup opens so it uses the current weights
-    m.bindPopup(() => sitePopupHtml(sc, site), { maxWidth: 330 });
+    m.bindPopup(() => sitePopupHtml(sc, site), { maxWidth: popupWidth(330) });
     // Add the site to the layer
     m.addTo(siteLayer);
     // Keep the marker for the panel list
@@ -1386,7 +1402,130 @@ document.getElementById("scenario-body").addEventListener("click", (e) => {
 });
 
 // ---------------------------------------------------------------------------
-// 8. Redraw
+// 8. Phone layout: the panel as a bottom sheet (screens up to 760 px wide only)
+// ---------------------------------------------------------------------------
+
+// Screen-width test that matches the narrow-screen rules in style.css
+const NARROW = window.matchMedia("(max-width: 760px)");
+// Handle at the top of the sheet
+const sheetHandle = document.getElementById("sheet-handle");
+// Text on the handle that says what a tap does
+const sheetAction = document.getElementById("sheet-action");
+// Current sheet state: "peek" (closed), "half" or "full"
+let sheetState = "peek";
+// Phones: popups keep clear of the zoom buttons (top left) and the base-map button (top right) when the map pans to show them
+if (NARROW.matches) L.Popup.mergeOptions({ autoPanPaddingTopLeft: [52, 10], autoPanPaddingBottomRight: [52, 10] });
+
+/**
+ * Open or close the bottom sheet, then let the map fit the space left above it.
+ * Does nothing on wider screens, where the panel stays at the side.
+ * @param {string} s - "peek", "half" or "full".
+ * @returns {void}
+ */
+function setSheet(s) {
+  // Wider screens have no sheet
+  if (!NARROW.matches) return;
+  // Remember the state
+  sheetState = s;
+  // Half-open class
+  document.body.classList.toggle("sheet-half", s === "half");
+  // Fully open class
+  document.body.classList.toggle("sheet-full", s === "full");
+  // Tell screen readers whether the panel is open
+  sheetHandle.setAttribute("aria-expanded", String(s !== "peek"));
+  // Back to the top of the panel when it closes, so the search box shows
+  if (s === "peek") document.getElementById("panel").scrollTop = 0;
+  // Update the handle text
+  sheetLabel();
+  // Resize the map to the new layout now, keeping its centre, so a popup opened next is placed correctly
+  map.invalidateSize();
+}
+
+/**
+ * Set the handle text to what a tap will do.
+ * @returns {void}
+ */
+function sheetLabel() {
+  // Text when the sheet is open
+  if (sheetState !== "peek") sheetAction.textContent = "Show map";
+  // Text when closed with a building selected
+  else if (state.selected !== null) sheetAction.textContent = "Building details";
+  // Text when closed with nothing selected
+  else sheetAction.textContent = "Show controls";
+}
+
+/**
+ * After a building is selected on a phone: close the sheet so the building and its popup are visible.
+ * @returns {void}
+ */
+function sheetAfterSelect() {
+  // Wider screens keep the side panel as it is
+  if (!NARROW.matches) return;
+  // Hide the phone keyboard if the search box had it open
+  searchBox.blur();
+  // Close the sheet (this also updates the handle text)
+  setSheet("peek");
+}
+
+/**
+ * Open the sheet half-way; with a building selected, scroll to its details.
+ * @returns {void}
+ */
+function sheetOpen() {
+  // Half-open sheet
+  setSheet("half");
+  // Nothing more to do without a selection
+  if (state.selected === null) return;
+  // The panel that scrolls
+  const panel = document.getElementById("panel");
+  // Close the building's popup: the details are now in the sheet, and the small map strip stays clear
+  map.closePopup();
+  // Distance from the top of the visible panel to the selected-building section
+  const gap = document.getElementById("selection").getBoundingClientRect().top - panel.getBoundingClientRect().top;
+  // Scroll by that distance, leaving the section just under the sticky handle
+  panel.scrollTop += gap - sheetHandle.offsetHeight - 8;
+}
+
+// A tap on the handle opens a closed sheet and closes an open one
+sheetHandle.addEventListener("click", () => (sheetState === "peek" ? sheetOpen() : setSheet("peek")));
+
+// Vertical position where a finger touched the handle
+let sheetTouchY = null;
+// Remember where the finger went down
+sheetHandle.addEventListener("touchstart", (e) => { sheetTouchY = e.touches[0].clientY; }, { passive: true });
+// When the finger lifts, a clear swipe moves the sheet one step up or down
+sheetHandle.addEventListener("touchend", (e) => {
+  // No swipe was started
+  if (sheetTouchY === null) return;
+  // Distance moved: negative is up
+  const dy = e.changedTouches[0].clientY - sheetTouchY;
+  // Forget the start point
+  sheetTouchY = null;
+  // Short movements are taps, handled by the click listener
+  if (Math.abs(dy) < 30) return;
+  // Stop the tap that would follow the swipe
+  e.preventDefault();
+  // Swipe up: closed to half, half to full
+  if (dy < 0) sheetState === "peek" ? sheetOpen() : setSheet("full");
+  // Swipe down: full to half, half to closed
+  else setSheet(sheetState === "full" ? "half" : "peek");
+});
+
+// Typing in the search box opens the sheet half-way so the results have room
+searchBox.addEventListener("focus", () => { if (NARROW.matches && sheetState === "peek") setSheet("half"); });
+
+// Turning a tablet or resizing a window across the 760 px line: reset the sheet and refit the map
+NARROW.addEventListener("change", () => {
+  // Remove the sheet classes on wider screens, start closed on narrow ones
+  if (!NARROW.matches) document.body.classList.remove("sheet-half", "sheet-full");
+  // Closed sheet on narrow screens
+  else setSheet("peek");
+  // Fit the map to its new size
+  requestAnimationFrame(() => map.invalidateSize());
+});
+
+// ---------------------------------------------------------------------------
+// 9. Redraw
 // ---------------------------------------------------------------------------
 
 /**

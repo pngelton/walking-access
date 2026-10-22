@@ -745,26 +745,168 @@ select {
   flex: none;
 }
 
-/* Narrow screens: put the panel above the map */
+/* Handle of the phone bottom sheet: not shown on wider screens */
+#sheet-handle {
+  /* Hidden outside the narrow-screen rules below */
+  display: none;
+}
+
+/* Narrow screens (phones): map on top, panel as a bottom sheet that can be pulled up */
 @media (max-width: 760px) {
-  /* One column */
+  /* Sheet heights: closed (handle and search box), half open and fully open */
   body {
-    /* Panel on top, map below */
+    /* Closed sheet: handle plus the search box */
+    --sheet-peek: 150px;
+    /* Height used now; app.js switches it with the classes below */
+    --sheet: var(--sheet-peek);
+    /* Map above, sheet below */
     grid-template-columns: 1fr;
+    /* Map takes what the sheet leaves */
+    grid-template-rows: 1fr var(--sheet);
+    /* Older browsers: the whole window */
+    height: 100vh;
+    /* Newer browsers: the visible window, without the address bar */
+    height: 100dvh;
+    /* No page scrolling; the panel scrolls inside */
+    overflow: hidden;
   }
-  /* Panel height on small screens */
+  /* Half-open sheet */
+  body.sheet-half {
+    /* About half the window */
+    --sheet: 55dvh;
+  }
+  /* Fully open sheet */
+  body.sheet-full {
+    /* Most of the window, leaving a strip of map to tap */
+    --sheet: 88dvh;
+  }
+  /* Panel as the bottom sheet */
   #panel {
-    /* Panel takes the upper part of the screen */
-    height: 45vh;
+    /* Second grid row, below the map */
+    grid-row: 2;
+    /* Fill its grid row */
+    height: auto;
+    /* Allow shrinking below its content height */
+    min-height: 0;
+    /* Stack the sections so the search box can come first */
+    display: flex;
+    /* One column */
+    flex-direction: column;
     /* No side divider */
     border-right: none;
-    /* Divider below */
-    border-bottom: 1px solid var(--line);
+    /* Line above the sheet */
+    border-top: 1px solid var(--line);
+    /* Rounded top corners */
+    border-radius: 14px 14px 0 0;
+    /* Shadow, so the sheet reads as lying over the map */
+    box-shadow: 0 -4px 14px rgba(0, 0, 0, 0.18);
+    /* No inner space at the top: the handle sits there */
+    padding-top: 0;
+    /* Keep the last lines clear of the phone's home bar */
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    /* Smooth scrolling inside the sheet on touch screens */
+    -webkit-overflow-scrolling: touch;
+    /* Do not scroll the page when the sheet reaches its end */
+    overscroll-behavior: contain;
+    /* Above the map panes */
+    z-index: 1001;
+    /* Background, so the sheet is opaque */
+    background: var(--bg);
   }
-  /* Map height on small screens */
-  #map {
-    /* Map takes the lower part of the screen */
-    height: 55vh;
+  /* Keep each section at its natural height inside the flex column */
+  #panel > * {
+    /* Do not squeeze sections */
+    flex: none;
+  }
+  /* Handle bar of the sheet */
+  #sheet-handle {
+    /* Shown on phones */
+    display: grid;
+    /* Title on the left, action on the right */
+    grid-template-columns: 1fr auto;
+    /* Grip on its own row above */
+    grid-template-areas: "grip grip" "title action";
+    /* Centre the items vertically */
+    align-items: center;
+    /* Space between the parts */
+    gap: 4px 8px;
+    /* First item in the sheet */
+    order: -3;
+    /* Stay at the top while the sheet scrolls */
+    position: sticky;
+    /* Stick to the very top */
+    top: 0;
+    /* Above the sheet content */
+    z-index: 2;
+    /* Reach the sheet edges, past the panel padding */
+    margin: 0 -18px 8px;
+    /* Inner spacing, at least 44 px tall to tap */
+    padding: 8px 18px 10px;
+    /* Opaque, so content scrolls under it */
+    background: var(--bg);
+    /* No button border */
+    border: none;
+    /* Line under the handle */
+    border-bottom: 1px solid var(--line);
+    /* Square corners inside the rounded sheet */
+    border-radius: 14px 14px 0 0;
+    /* Full width */
+    width: calc(100% + 36px);
+    /* Left-aligned text */
+    text-align: left;
+    /* Readable size */
+    font-size: 15px;
+    /* Stop the browser from treating a drag on the handle as a page scroll */
+    touch-action: none;
+  }
+  /* Grip bar */
+  .sheet-grip {
+    /* Top row */
+    grid-area: grip;
+    /* Centred */
+    justify-self: center;
+    /* Bar size */
+    width: 40px;
+    /* Bar height */
+    height: 4px;
+    /* Rounded ends */
+    border-radius: 2px;
+    /* Muted colour */
+    background: var(--muted);
+    /* Lighter */
+    opacity: 0.5;
+  }
+  /* Page title on the handle */
+  .sheet-title {
+    /* Lower left */
+    grid-area: title;
+    /* Bold */
+    font-weight: 600;
+    /* Cut long titles with an ellipsis */
+    white-space: nowrap;
+    /* Hide overflow */
+    overflow: hidden;
+    /* Ellipsis */
+    text-overflow: ellipsis;
+  }
+  /* What a tap does */
+  .sheet-action {
+    /* Lower right */
+    grid-area: action;
+    /* Accent colour, so it reads as an action */
+    color: var(--accent);
+    /* Slightly smaller */
+    font-size: 14px;
+  }
+  /* Search box comes right after the handle */
+  #search-section {
+    /* Second item in the sheet */
+    order: -2;
+  }
+  /* Selected building comes next */
+  #selection {
+    /* Third item in the sheet */
+    order: -1;
   }
   /* Compact legend on small screens, so it does not cover the map */
   .legend {
@@ -1041,4 +1183,105 @@ select {
   padding: 4px 8px;
   /* Space around */
   margin: 6px 0;
+}
+
+/* ---------------------------------------------------------------------------
+   Phones: larger tap targets and text boxes that do not zoom the page
+   --------------------------------------------------------------------------- */
+@media (max-width: 760px) {
+  /* Search box and drop-down: 16 px text stops iPhones from zooming in on tap */
+  #search, select {
+    /* Size at which iOS does not zoom */
+    font-size: 16px;
+    /* Comfortable height to tap */
+    min-height: 44px;
+  }
+  /* Buttons */
+  button {
+    /* Tap height */
+    min-height: 40px;
+    /* Slightly larger text */
+    font-size: 14px;
+  }
+  /* Checkbox and radio rows */
+  .check {
+    /* Lay out the box and its label in a row */
+    display: flex;
+    /* Centre them vertically */
+    align-items: center;
+    /* Space between box and label */
+    gap: 8px;
+    /* Tap height */
+    min-height: 40px;
+    /* Rows close together, since each is taller */
+    margin: 0;
+  }
+  /* Scenario options keep the same row layout */
+  .scenario-options .check {
+    /* Row layout */
+    display: flex;
+  }
+  /* Checkboxes and radio buttons */
+  .check input {
+    /* Larger box */
+    width: 20px;
+    /* Larger box */
+    height: 20px;
+    /* No extra outer space */
+    margin: 0;
+    /* Keep the size */
+    flex: none;
+  }
+  /* Walking-time options */
+  .segmented label {
+    /* Tap height */
+    min-height: 40px;
+    /* Centre the text */
+    display: flex;
+    /* Centre vertically */
+    align-items: center;
+    /* Centre horizontally */
+    justify-content: center;
+  }
+  /* Weight sliders: narrower label column so the slider has room */
+  .slider-row {
+    /* Label, slider, share */
+    grid-template-columns: 110px 1fr 40px;
+    /* Rows a little apart */
+    margin: 8px 0;
+  }
+  /* Slider control */
+  .slider-row input[type="range"] {
+    /* Taller touch area */
+    height: 32px;
+  }
+  /* Search results */
+  #search-results li {
+    /* Taller rows to tap */
+    padding: 10px 6px;
+  }
+  /* Amenities in the selected-building list */
+  .poi-list li {
+    /* Taller rows to tap */
+    padding: 9px 4px;
+  }
+  /* Amenity group headings */
+  .poi-group summary {
+    /* Taller headings to tap */
+    padding: 10px 4px;
+  }
+  /* Tables in popups: smaller text so they fit the narrower phone popup */
+  .popup-table {
+    /* Smaller text */
+    font-size: 12px;
+  }
+  /* Zoom buttons of the map */
+  .leaflet-touch .leaflet-bar a {
+    /* Larger buttons */
+    width: 36px;
+    /* Larger buttons */
+    height: 36px;
+    /* Centre the sign */
+    line-height: 36px;
+  }
 }
