@@ -819,8 +819,8 @@ selectionKey.onAdd = function () {
     + `<div class="legend-sub">The shaded areas trace the walking paths that can be reached along the network. Inward notches are directions with no path; the outline is approximate.</div>`
     // Amenity symbols heading
     + `<div class="legend-end">Amenities in reach</div>`
-    // Amenity symbols
-    + symbols
+    // Amenity symbols, grouped so phones can show them in two compact columns
+    + `<div class="key-symbols">${symbols}</div>`
     // Size note
     + `<div class="legend-sub">Larger symbol: within 5 min. Smaller, lighter symbol: 5–10 min.</div>`;
   // Keep clicks and scrolling on the key from moving the map

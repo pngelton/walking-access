@@ -929,10 +929,43 @@ select {
     /* Not shown */
     display: none;
   }
-  /* On small screens the selected-building key shows only the outline rows; the panel explains the rest */
-  .selection-key .key-row:has(.key-symbol), .selection-key .legend-end {
+  /* On small screens the "Amenities in reach" heading is left out to save space; the lettered symbols stay */
+  .selection-key .legend-end {
     /* Not shown */
     display: none;
+  }
+  /* Amenity symbols in two compact columns, so the key stays small on a phone */
+  .selection-key .key-symbols {
+    /* Grid of symbols */
+    display: grid;
+    /* Two columns */
+    grid-template-columns: auto auto;
+    /* Space between the columns */
+    column-gap: 10px;
+    /* Space above, separating them from the outline rows */
+    margin-top: 4px;
+    /* Thin line above */
+    border-top: 1px solid var(--line);
+    /* Space below the line */
+    padding-top: 3px;
+  }
+  /* One symbol row in the compact key */
+  .selection-key .key-symbols .key-row {
+    /* Rows close together */
+    margin: 1px 0;
+    /* Less space between symbol and name */
+    gap: 5px;
+    /* Smaller text */
+    font-size: 12px;
+  }
+  /* Smaller symbols in the compact key */
+  .selection-key .key-symbols .key-symbol {
+    /* Width */
+    width: 16px;
+    /* Height */
+    height: 16px;
+    /* Letter size */
+    font-size: 10px;
   }
   /* Drop the explanatory lines of the legend on small screens (the panel explains the score) */
   .legend-sub {
