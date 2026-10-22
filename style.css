@@ -1318,3 +1318,312 @@ select {
     line-height: 36px;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Area views (planning areas and subzones)
+   --------------------------------------------------------------------------- */
+
+/* Switches with three options keep the options on one line */
+.segmented.three {
+  /* Space below, so the two switches do not touch */
+  margin-bottom: 6px;
+}
+/* Options of a three-part switch: centred text */
+.segmented.three label {
+  /* Centre the text */
+  text-align: center;
+  /* Less side padding so three fit */
+  padding: 6px 4px;
+}
+/* While an area view is shown, the building score legend gives way to the area legend */
+body.areas-on .score-legend {
+  /* Not shown */
+  display: none;
+}
+/* Area legend: one row per class */
+.area-legend .legend-row {
+  /* Swatch and label side by side */
+  display: flex;
+  /* Centre vertically */
+  align-items: center;
+  /* Space between swatch and label */
+  gap: 6px;
+}
+/* Swatch of an area class */
+.area-legend i {
+  /* Fixed-size box */
+  display: inline-block;
+  /* Width */
+  width: 16px;
+  /* Height */
+  height: 12px;
+  /* Thin border so white classes show */
+  border: 1px solid #9aa7b4;
+  /* Square swatches, like the areas on the map */
+  border-radius: 2px;
+  /* Do not shrink */
+  flex: none;
+}
+/* Dashed swatch for areas with few units */
+.area-legend i.few {
+  /* Dashed border, as on the map */
+  border: 2px dashed #e08214;
+  /* White fill */
+  background: transparent;
+}
+/* Popup of an area: compact table */
+.area-popup td {
+  /* Space between columns */
+  padding: 1px 8px 1px 0;
+}
+/* Numbers in the area popup line up */
+.area-popup td:last-child {
+  /* Right-aligned */
+  text-align: right;
+  /* Digits of equal width */
+  font-variant-numeric: tabular-nums;
+}
+
+/* One numbered step of the area controls */
+fieldset.step {
+  /* No box around the step */
+  border: none;
+  /* No inner space */
+  padding: 0;
+  /* Space between the steps */
+  margin: 10px 0 0;
+  /* Smooth fade when the step is enabled */
+  transition: opacity 0.2s;
+}
+/* A step that cannot be used yet is shown faded */
+fieldset.step:disabled {
+  /* Faded */
+  opacity: 0.45;
+}
+/* Step title */
+fieldset.step legend {
+  /* Bold */
+  font-weight: 600;
+  /* Space below */
+  margin-bottom: 6px;
+  /* No extra inner space */
+  padding: 0;
+}
+/* Round step number */
+.step-no {
+  /* Centre the digit in a circle */
+  display: inline-flex;
+  /* Centre horizontally */
+  justify-content: center;
+  /* Centre vertically */
+  align-items: center;
+  /* Circle size */
+  width: 20px;
+  /* Circle size */
+  height: 20px;
+  /* Round */
+  border-radius: 50%;
+  /* Accent background */
+  background: var(--accent);
+  /* White digit */
+  color: #ffffff;
+  /* Small bold digit */
+  font: 700 12px/1 system-ui, sans-serif;
+  /* Space after the number */
+  margin-right: 6px;
+}
+/* Second line of an area-level option (count and detail) */
+.segmented.three small {
+  /* Own line */
+  display: block;
+  /* Secondary colour */
+  color: var(--muted);
+  /* Small text */
+  font-size: 11px;
+}
+/* The selected option of a switch is highlighted */
+.segmented label:has(input:checked), .mode-option:has(input:checked) {
+  /* Accent border */
+  border-color: var(--accent);
+  /* Light highlight */
+  background: var(--hover);
+}
+/* Options of step 2, one per row */
+.mode-options {
+  /* Stack the options */
+  display: grid;
+  /* Space between them */
+  gap: 6px;
+}
+/* One option of step 2: radio button and text */
+.mode-option {
+  /* Radio and text side by side */
+  display: flex;
+  /* Radio at the top */
+  align-items: flex-start;
+  /* Space between radio and text */
+  gap: 8px;
+  /* Border around the option */
+  border: 1px solid var(--line);
+  /* Rounded corners */
+  border-radius: 6px;
+  /* Inner spacing */
+  padding: 6px 8px;
+  /* Pointer cursor */
+  cursor: pointer;
+}
+/* Text of a step-2 option: title and explanation on separate lines */
+.mode-option span {
+  /* Stack title and explanation */
+  display: flex;
+  /* One under the other */
+  flex-direction: column;
+}
+/* Explanation of a step-2 option */
+.mode-option small {
+  /* Secondary colour */
+  color: var(--muted);
+  /* Small text */
+  font-size: 12px;
+}
+/* The waiting note is hidden once step 2 can be used */
+fieldset.step:not(:disabled) #area-mode-wait {
+  /* Not shown */
+  display: none;
+}
+/* Phones: larger tap areas for the step-2 options */
+@media (max-width: 760px) {
+  /* Taller options */
+  .mode-option {
+    /* Tap height */
+    min-height: 44px;
+    /* More inner space */
+    padding: 8px 10px;
+  }
+}
+/* Phones: area-level options keep their two lines stacked and centred */
+@media (max-width: 760px) {
+  /* Stack the option text */
+  .segmented.three label {
+    /* Text lines one under the other */
+    flex-direction: column;
+    /* Centred */
+    text-align: center;
+    /* Small gap between the lines */
+    gap: 2px;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Folding sections (Compare areas, Planning scenario) and the area status line
+   --------------------------------------------------------------------------- */
+
+/* Heading of a folding section: title on the left, current choice and arrow on the right */
+details.fold > summary {
+  /* Title and status on one line */
+  display: flex;
+  /* Centre them vertically */
+  align-items: center;
+  /* Space between the parts */
+  gap: 8px;
+  /* Pointer cursor: the heading opens the section */
+  cursor: pointer;
+  /* Hide the browser's own triangle */
+  list-style: none;
+  /* Taller tap area */
+  padding: 4px 0;
+}
+/* Hide the triangle in Safari too */
+details.fold > summary::-webkit-details-marker {
+  /* Not shown */
+  display: none;
+}
+/* Title, styled like the other section headings */
+.fold-title {
+  /* Small, bold heading */
+  font-size: 13px;
+  /* Bold */
+  font-weight: 600;
+  /* Upper case, as the other headings */
+  text-transform: uppercase;
+  /* Slight letter spacing */
+  letter-spacing: 0.04em;
+  /* Secondary colour */
+  color: var(--muted);
+  /* Takes the free space, pushing the status right */
+  flex: 1;
+}
+/* Current choice shown on the closed heading */
+.fold-status {
+  /* Accent colour */
+  color: var(--accent);
+  /* Small text */
+  font-size: 12px;
+  /* Bold */
+  font-weight: 600;
+}
+/* Arrow after the status: points down when closed */
+details.fold > summary::after {
+  /* Arrow character */
+  content: "▾";
+  /* Secondary colour */
+  color: var(--muted);
+  /* Smooth turn */
+  transition: transform 0.2s;
+}
+/* Arrow points up when the section is open */
+details.fold[open] > summary::after {
+  /* Turn the arrow */
+  transform: rotate(180deg);
+}
+/* Status line on the map while an area view is shown */
+.area-chip {
+  /* Above the map, near the top */
+  position: absolute;
+  /* Distance from the top */
+  top: 12px;
+  /* Centred horizontally */
+  left: 50%;
+  /* Centre on its own width */
+  transform: translateX(-50%);
+  /* Above map panes and controls */
+  z-index: 1000;
+  /* Box background from the theme */
+  background: var(--surface);
+  /* Text colour */
+  color: var(--ink);
+  /* Thin accent border */
+  border: 1px solid var(--accent);
+  /* Pill shape */
+  border-radius: 999px;
+  /* Inner spacing */
+  padding: 6px 12px;
+  /* Small text */
+  font-size: 13px;
+  /* Soft shadow */
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.2);
+  /* Pointer cursor: a click opens the area controls */
+  cursor: pointer;
+  /* Keep on one line */
+  white-space: nowrap;
+  /* Inherit the page font */
+  font-family: inherit;
+}
+/* "Change" part of the status line */
+.area-chip span {
+  /* Accent colour */
+  color: var(--accent);
+  /* Space before it */
+  margin-left: 6px;
+}
+/* "Back to buildings" link in an area popup */
+.area-back {
+  /* Own line */
+  display: inline-block;
+  /* Space above */
+  margin-top: 6px;
+  /* Accent colour */
+  color: var(--accent);
+  /* Bold */
+  font-weight: 600;
+}

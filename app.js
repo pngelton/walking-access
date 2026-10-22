@@ -593,6 +593,8 @@ function popupWidth(w) {
 function selectHome(i) {
   // Remember the selection
   state.selected = i;
+  // A building was chosen, so leave any area view and return to the building map
+  if (areaState.level) backToBuildings();
   // Draw the ring around the home
   foundRing.setLatLng([HOMES.lat[i], HOMES.lon[i]]).addTo(map);
   // Centre the map on the home, zooming in to street level if the map is further out
@@ -647,8 +649,8 @@ function renderSelection() {
   document.body.classList.toggle("selecting", i !== null);
   // The hint is shown only when nothing is selected
   document.getElementById("select-hint").hidden = i !== null;
-  // Fade the home dots while a building is selected
-  fadeHomes(i !== null);
+  // Fade the home dots while a building is selected or an area view is shown
+  fadeHomes(i !== null || areaState.level !== "");
   // Hide or show the other buildings
   applyHideOthers();
   // Nothing more to draw without a selection
@@ -1359,6 +1361,8 @@ function renderScenarioPanel() {
  * @returns {void}
  */
 function setScenario(key) {
+  // Show the chosen scenario on the folded heading
+  document.getElementById("planning-status").textContent = key ? PLANNING[key].title : "Current situation";
   // Store the choice
   state.scenario = key;
   // A scenario changes 10-minute access, so show 10 minutes when one is chosen
@@ -1525,7 +1529,322 @@ NARROW.addEventListener("change", () => {
 });
 
 // ---------------------------------------------------------------------------
-// 9. Redraw
+// 9. Area views: planning areas and subzones coloured by rank, score or gap
+// ---------------------------------------------------------------------------
+
+// True when the outline file data_areas.js was loaded
+const HAS_AREAS = typeof AREAS !== "undefined";
+// Area view state: level ("" = off, "pa" or "sz") and colour mode ("rank", "score" or "gap")
+const areaState = { level: "", mode: "rank" };
+// Units below which an area's values are flagged as less reliable
+const FEW_UNITS = 100;
+// Rank colours on a light page, top fifth first (dark blue to white)
+const RANK_COLOURS_LIGHT = ["#08306b", "#2171b5", "#6baed6", "#c6dbef", "#f7fbff"];
+// Rank colours on a dark page, top fifth first (bright to dark, so the top still stands out)
+const RANK_COLOURS_DARK = ["#cfe4ff", "#7fb6e6", "#3f84c4", "#245489", "#1b2c44"];
+
+/**
+ * Rank colours for the current theme.
+ * @returns {string[]} five hex colours, top fifth first.
+ */
+function rankColours() {
+  // Dark palette on a dark page, light palette otherwise
+  return isDark() ? RANK_COLOURS_DARK : RANK_COLOURS_LIGHT;
+}
+// Labels of the rank fifths, top first
+const RANK_LABELS = ["Top 20%", "20–40%", "40–60%", "60–80%", "Bottom 20%"];
+// Gap classes: upper edge of each class (private minus HDB, points) and its colour, HDB-ahead classes first
+const GAP_CLASSES = [
+  // HDB far ahead
+  { max: -30, colour: "#2d004b", label: "HDB ahead by 30+" },
+  // HDB well ahead
+  { max: -20, colour: "#542788", label: "HDB ahead by 20–30" },
+  // HDB ahead
+  { max: -10, colour: "#8073ac", label: "HDB ahead by 10–20" },
+  // HDB slightly ahead
+  { max: -2, colour: "#b2abd2", label: "HDB ahead by 2–10" },
+  // About equal
+  { max: 2, colour: "#f7f7f7", label: "Within 2 points" },
+  // Private ahead
+  { max: 10, colour: "#fdb863", label: "Private ahead by 2–10" },
+  // Private well ahead
+  { max: Infinity, colour: "#e08214", label: "Private ahead by 10+" },
+];
+// Grey of areas with only one housing group (no gap)
+const ONE_GROUP_COLOUR = "#a9a9a9";
+// Map pane for the areas, above the building dots so areas can be tapped
+map.createPane("areas");
+// Draw the areas above the dots (overlay pane is 400) and below popups
+map.getPane("areas").style.zIndex = 450;
+// One Leaflet layer per level, built the first time it is shown
+const areaLayers = {};
+// Values of each area under the current settings, by level and area name
+let areaStats = {};
+
+/**
+ * Unit-weighted mean score of all homes, HDB homes and private homes in every area of one level.
+ * Uses the current scores, so the values follow the weights, walking time, gym switch and scenario.
+ * @param {string} level - "pa" (planning areas) or "sz" (subzones).
+ * @returns {Map<string, object>} per area: units and means of all, HDB and private homes, gap, rank and fifth.
+ */
+function areaValues(level) {
+  // Column of HOMES that names each home's area
+  const names = level === "pa" ? HOMES.pln_area : HOMES.subzone;
+  // Running totals per area
+  const acc = new Map();
+  // Loop over all homes
+  for (let i = 0; i < N; i++) {
+    // Totals of this home's area, created the first time the area is seen
+    if (!acc.has(names[i])) acc.set(names[i], { w: 0, ws: 0, HDB: { w: 0, ws: 0 }, Private: { w: 0, ws: 0 } });
+    // The area's totals
+    const a = acc.get(names[i]);
+    // Dwelling units of this home (the weight)
+    const w = HOMES.du[i];
+    // Add to the totals of all homes
+    a.w += w;
+    // Add the unit-weighted score of all homes
+    a.ws += w * scores[i];
+    // Add to the totals of the home's group
+    a[HOMES.housing_group[i]].w += w;
+    // Add the unit-weighted score of the home's group
+    a[HOMES.housing_group[i]].ws += w * scores[i];
+  }
+  // Turn the totals into means
+  for (const a of acc.values()) {
+    // Mean of all homes
+    a.mean = a.ws / a.w;
+    // Mean of HDB homes, or null when there are none
+    a.hdb = a.HDB.w ? a.HDB.ws / a.HDB.w : null;
+    // Mean of private homes, or null when there are none
+    a.priv = a.Private.w ? a.Private.ws / a.Private.w : null;
+    // Gap (private minus HDB), or null when one group is missing
+    a.gap = a.hdb !== null && a.priv !== null ? a.priv - a.hdb : null;
+  }
+  // Areas sorted from highest to lowest mean
+  const order = [...acc.entries()].sort((x, y) => y[1].mean - x[1].mean);
+  // Give each area its rank and fifth (0 = top fifth)
+  order.forEach(([, a], k) => { a.rank = k + 1; a.fifth = Math.min(4, Math.floor((5 * k) / order.length)); });
+  // Return the values
+  return acc;
+}
+
+/**
+ * Fill colour, outline and dash pattern of one area for the current mode.
+ * @param {object|undefined} a - the area's values, or undefined when it has no homes.
+ * @returns {object} Leaflet path style.
+ */
+function areaStyle(a) {
+  // Areas without homes in the study are not filled, so the base map shows
+  if (!a) return { stroke: false, fill: false };
+  // Fill colour for the current mode
+  let fill;
+  // Rank: colour of the fifth
+  if (areaState.mode === "rank") fill = rankColours()[a.fifth];
+  // Score: the same five classes as the building dots
+  else if (areaState.mode === "score") fill = colourOf(a.mean);
+  // Gap: grey when one group is missing, otherwise the gap class
+  else fill = a.gap === null ? ONE_GROUP_COLOUR : GAP_CLASSES.find((c) => a.gap <= c.max).colour;
+  // Few units: flagged with a dashed orange outline (of the whole area, or of the smaller group in gap mode)
+  const few = areaState.mode === "gap" && a.gap !== null ? Math.min(a.HDB.w, a.Private.w) < FEW_UNITS : a.w < FEW_UNITS;
+  // Return the style
+  return { fillColor: fill, fillOpacity: 0.88, color: few ? "#e08214" : "#7d8a96", weight: few ? 2 : 0.6, dashArray: few ? "4 3" : null };
+}
+
+/**
+ * HTML of an area's popup: name, rank, means, gap and units.
+ * @param {string} name - area name.
+ * @returns {string} HTML.
+ */
+function areaPopupHtml(name) {
+  // The area's values
+  const a = areaStats[areaState.level].get(name);
+  // Number of areas at this level that have homes
+  const total = areaStats[areaState.level].size;
+  // Format a mean with one decimal, or a dash when missing
+  const f = (x) => (x === null ? "–" : x.toFixed(1));
+  // Format a gap with its sign, using a true minus sign
+  const g = (x) => (x === null ? "no gap (one group only)" : (x < 0 ? "&minus;" : "+") + Math.abs(x).toFixed(1));
+  // Popup content
+  return `<div class="area-popup"><strong>${titleCase(name)}</strong> (${areaState.level === "pa" ? "planning area" : "subzone"})<br>`
+    // Rank line
+    + `Ranked <strong>${a.rank}</strong> of ${total} (${RANK_LABELS[a.fifth].toLowerCase()})<table>`
+    // Mean of all homes
+    + `<tr><td>Mean score, all homes</td><td>${f(a.mean)}</td></tr>`
+    // HDB mean and units
+    + `<tr><td>HDB homes (${a.HDB.w.toLocaleString()} units)</td><td>${f(a.hdb)}</td></tr>`
+    // Private mean and units
+    + `<tr><td>Private homes (${a.Private.w.toLocaleString()} units)</td><td>${f(a.priv)}</td></tr>`
+    // Gap
+    + `<tr><td>Gap, private − HDB</td><td>${g(a.gap)}</td></tr></table>`
+    // Note on the settings
+    + `<small>Within ${state.t} min, with the weights and switches in the panel.${a.w < FEW_UNITS || (a.gap !== null && Math.min(a.HDB.w, a.Private.w) < FEW_UNITS) ? " Few units: read with care." : ""}</small><br>`
+    // Link that switches the area view off
+    + `<a href="#" class="area-back">Back to buildings</a></div>`;
+}
+
+// Legend of the area view, in the lower-right corner (hidden while no area view is shown)
+const areaLegend = L.control({ position: "bottomright" });
+// Build the legend container when it is added to the map
+areaLegend.onAdd = function () {
+  // Container
+  const div = L.DomUtil.create("div", "legend area-legend");
+  // Hidden until an area view is chosen
+  div.hidden = true;
+  // Return the container
+  return div;
+};
+// Add the legend to the map
+areaLegend.addTo(map);
+
+/**
+ * Fill the area legend for the current level and mode.
+ * @returns {void}
+ */
+function drawAreaLegend() {
+  // Legend container
+  const div = areaLegend.getContainer();
+  // Hide it while no area view is shown
+  div.hidden = !areaState.level;
+  // Nothing more to draw when hidden
+  if (!areaState.level) return;
+  // Word for the level
+  const level = areaState.level === "pa" ? "planning areas" : "subzones";
+  // Rows of the current mode
+  let rows;
+  // Rank rows
+  if (areaState.mode === "rank") rows = rankColours().map((c, k) => `<div class="legend-row"><i style="background:${c}"></i>${RANK_LABELS[k]}</div>`);
+  // Score rows, the classes of the building dots, highest first
+  else if (areaState.mode === "score") rows = classColours().map((c, k) => `<div class="legend-row"><i style="background:${c}"></i>${[0, ...BREAKS][k]}–${[...BREAKS, 100][k]}</div>`).reverse();
+  // Gap rows, plus the one-group grey
+  else rows = GAP_CLASSES.map((c) => `<div class="legend-row"><i style="background:${c.colour}"></i>${c.label}</div>`).concat(`<div class="legend-row"><i style="background:${ONE_GROUP_COLOUR}"></i>One group only: all homes HDB, or all private</div>`);
+  // Title of the current mode
+  const title = { rank: `Rank among ${level}`, score: `Average score of all homes, by ${level.replace(/s$/, "")}`, gap: `Gap by ${level.replace(/s$/, "")}: private − HDB (points)` }[areaState.mode];
+  // Legend content
+  div.innerHTML = `<strong>${title}</strong>` + rows.join("")
+    // Few-units key
+    + `<div class="legend-row"><i class="few"></i>Fewer than ${FEW_UNITS} units: read with care</div>`
+    // Walking time in use
+    + `<div class="legend-sub">Within ${state.t} min (${state.t * M_PER_MIN} m) on foot</div>`;
+}
+
+/**
+ * Show, hide or recolour the area view after any change of level, mode or settings.
+ * @returns {void}
+ */
+function drawAreas() {
+  // Nothing to do without the outline file
+  if (!HAS_AREAS) return;
+  // Hide every area layer first
+  for (const layer of Object.values(areaLayers)) map.removeLayer(layer);
+  // Mark the page while an area view is shown (the building legend then gives way)
+  document.body.classList.toggle("areas-on", !!areaState.level);
+  // Fade the building dots under an area view; otherwise restore them (still faded while a building is selected)
+  fadeHomes(!!areaState.level || state.selected !== null);
+  // Step 2 can be used only once an area level is chosen
+  document.getElementById("area-mode-step").disabled = !areaState.level;
+  // Short names of the level and mode for the status texts
+  const levelName = { "": "Off", pa: "Planning areas", sz: "Subzones" }[areaState.level];
+  // Mode name with a capital letter
+  const modeName = { rank: "Rank", score: "Score", gap: "Gap" }[areaState.mode];
+  // Current choice on the folded heading
+  document.getElementById("areas-status").textContent = areaState.level ? `${levelName} · ${modeName}` : "Off";
+  // Status line on the map, shown only while an area view is on
+  areaChip.hidden = !areaState.level;
+  // Text of the status line
+  areaChip.innerHTML = `${levelName} · ${modeName} · ${state.t} min<span>Change</span>`;
+  // Update the legend
+  drawAreaLegend();
+  // Update the panel note
+  document.getElementById("areas-hint").textContent = areaState.level
+    // Note for the chosen mode
+    ? { rank: "Areas are sorted by the average score of their homes and split into fifths, so the colours show rank, not the score. Tap an area for both.", score: "Average score of all homes in each area, weighted by units, in the same colours as the building dots. Tap an area for details.", gap: "Private average minus HDB average inside each area. Grey areas have only one housing group, so there is no gap to measure. Tap an area for details." }[areaState.mode]
+    // Note while the view is off
+    : "Tap an area on the map for its scores and rank. The walking-time switch and the sliders above also change the areas.";
+  // Nothing more to draw while the view is off
+  if (!areaState.level) return;
+  // Values of every area under the current settings
+  areaStats[areaState.level] = areaValues(areaState.level);
+  // Build the layer the first time this level is shown
+  if (!areaLayers[areaState.level]) {
+    // One SVG path per area, in the areas pane
+    areaLayers[areaState.level] = L.geoJSON(AREAS[areaState.level], {
+      // Pane above the building dots
+      pane: "areas",
+      // Draw with SVG so each area can be tapped
+      renderer: L.svg({ pane: "areas" }),
+      // Popup of each area, filled in when it opens
+      onEachFeature: (feature, layer) => layer.bindPopup(() => areaPopupHtml(feature.properties.name), { maxWidth: popupWidth(300) }),
+    });
+  }
+  // Colour every area for the current mode
+  areaLayers[areaState.level].setStyle((feature) => areaStyle(areaStats[areaState.level].get(feature.properties.name)));
+  // Areas without homes cannot be tapped
+  areaLayers[areaState.level].eachLayer((layer) => { layer.options.interactive = areaStats[areaState.level].has(layer.feature.properties.name); });
+  // Show the layer
+  areaLayers[areaState.level].addTo(map);
+}
+
+/**
+ * Open the "Compare areas" section and bring it into view (on phones, the sheet opens first).
+ * @returns {void}
+ */
+function openAreaControls() {
+  // Unfold the section
+  document.getElementById("areas-fold").open = true;
+  // Phones: open the bottom sheet half-way
+  if (NARROW.matches) setSheet("half");
+  // The panel that scrolls
+  const panel = document.getElementById("panel");
+  // Distance from the top of the visible panel to the section
+  const gap = document.getElementById("areas-section").getBoundingClientRect().top - panel.getBoundingClientRect().top;
+  // Scroll the section to the top, below the phone handle when there is one
+  panel.scrollTop += gap - (NARROW.matches ? sheetHandle.offsetHeight + 8 : 8);
+}
+
+/**
+ * Switch the area view off and return to the building map.
+ * @returns {void}
+ */
+function backToBuildings() {
+  // Tick "Buildings only"
+  document.querySelector('input[name="area-level"][value=""]').checked = true;
+  // Store the choice
+  areaState.level = "";
+  // Close any area popup
+  map.closePopup();
+  // Redraw
+  drawAreas();
+}
+
+// Status line on the map: which area view is shown, and a way back to the controls
+const areaChip = L.DomUtil.create("button", "area-chip", map.getContainer());
+// It is a button, not a form submit
+areaChip.type = "button";
+// Hidden until an area view is chosen
+areaChip.hidden = true;
+// Keep clicks on the status line from reaching the map
+L.DomEvent.disableClickPropagation(areaChip);
+// A click opens the area controls
+areaChip.addEventListener("click", openAreaControls);
+// "Back to buildings" links inside area popups
+map.getContainer().addEventListener("click", (e) => {
+  // Only clicks on the link
+  if (!e.target.closest(".area-back")) return;
+  // Do not follow the "#" address
+  e.preventDefault();
+  // Switch the area view off
+  backToBuildings();
+});
+
+// Hide the section when the outline file is missing
+if (!HAS_AREAS) document.getElementById("areas-section").hidden = true;
+// Level buttons: off, planning areas or subzones
+for (const r of document.querySelectorAll('input[name="area-level"]')) r.addEventListener("change", (e) => { areaState.level = e.target.value; map.closePopup(); drawAreas(); });
+// Mode buttons: rank, score or gap
+for (const r of document.querySelectorAll('input[name="area-mode"]')) r.addEventListener("change", (e) => { areaState.mode = e.target.value; drawAreas(); });
+
+// ---------------------------------------------------------------------------
+// 10. Redraw
 // ---------------------------------------------------------------------------
 
 /**
@@ -1575,6 +1894,8 @@ function update() {
   renderScenarioPanel();
   // Refresh an open site popup so it shows the score change with the new weights
   for (const m of siteMarkers.values()) if (m.isPopupOpen()) m.getPopup().update();
+  // Recolour the area view, if one is shown, for the new settings
+  drawAreas();
 }
 
 // Draw everything once at the start

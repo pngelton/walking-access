@@ -10,8 +10,8 @@
   <title>Walking Access in Singapore · GE5219</title>
   <!-- Leaflet map library styles (loaded from the cdnjs content network) -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-  <!-- Page styles for this map -->
-  <link rel="stylesheet" href="style.css">
+  <!-- Page styles for this map (the ?v= date makes browsers fetch the new file after an update instead of a stored copy) -->
+  <link rel="stylesheet" href="style.css?v=2026-10-23">
 </head>
 <body>
   <!-- Side panel with the controls and the summary -->
@@ -80,6 +80,49 @@
       <p class="hint">Both settings use the same benchmark, so scores can be compared between them. Few buildings have much within 5 minutes, so most score below 20 at that setting.</p>
     </section>
 
+    <!-- Area views: planning areas or subzones coloured by rank, score or gap; hidden by app.js when data_areas.js is missing -->
+    <section id="areas-section">
+      <!-- Folding section, closed at start -->
+      <details class="fold" id="areas-fold">
+        <!-- Heading that opens the section, with the current choice on the right -->
+        <summary><span class="fold-title">Compare areas</span><span class="fold-status" id="areas-status">Off</span></summary>
+        <!-- What the section does -->
+        <p class="hint">See how whole neighbourhoods compare, instead of single buildings.</p>
+        <!-- Step 1: area level -->
+        <fieldset class="step">
+          <!-- Step title with its number -->
+          <legend><span class="step-no">1</span> Choose the areas</legend>
+          <!-- Three options side by side -->
+          <div class="segmented three" role="radiogroup" aria-label="Area level">
+            <!-- Buildings only, selected at start -->
+            <label><input type="radio" name="area-level" value="" checked> Buildings only</label>
+            <!-- 55 planning areas -->
+            <label><input type="radio" name="area-level" value="pa"> Planning areas <small>55, large</small></label>
+            <!-- 332 subzones -->
+            <label><input type="radio" name="area-level" value="sz"> Subzones <small>332, detailed</small></label>
+          </div>
+        </fieldset>
+        <!-- Step 2: what the colours show; disabled until an area level is chosen -->
+        <fieldset class="step" id="area-mode-step" disabled>
+          <!-- Step title with its number -->
+          <legend><span class="step-no">2</span> Choose what the colours show</legend>
+          <!-- Shown while step 1 is still "Buildings only" -->
+          <p class="hint" id="area-mode-wait">Choose planning areas or subzones first.</p>
+          <!-- One option per row, each with a short explanation -->
+          <div class="mode-options" role="radiogroup" aria-label="Colour areas by">
+            <!-- Rank, the default -->
+            <label class="mode-option"><input type="radio" name="area-mode" value="rank" checked><span><strong>Rank</strong><small>How each area compares with the others, from the top 20% to the bottom 20%</small></span></label>
+            <!-- Mean score of all homes -->
+            <label class="mode-option"><input type="radio" name="area-mode" value="score"><span><strong>Score</strong><small>Average walking-access score of all homes in the area (0–100)</small></span></label>
+            <!-- Private minus HDB -->
+            <label class="mode-option"><input type="radio" name="area-mode" value="gap"><span><strong>Gap</strong><small>Private score minus HDB score inside the area: which group has better access</small></span></label>
+          </div>
+        </fieldset>
+        <!-- Explanation of the chosen view, filled in by app.js -->
+        <p class="hint" id="areas-hint">Tap an area on the map for its scores and rank. The walking-time switch and the sliders above also change the areas.</p>
+      </details>
+    </section>
+
     <!-- Explanation of the score, folded by default -->
     <section>
       <!-- Folding explanation -->
@@ -142,21 +185,24 @@
 
     <!-- Planning scenarios from Notebook 05; hidden by app.js when data_planning.js is missing -->
     <section id="planning-section">
-      <!-- Section heading -->
-      <h2>Planning scenario</h2>
-      <!-- What the section does -->
-      <p class="hint">See how five new facilities, chosen in Notebook 05, would change walking access within 10 minutes.</p>
-      <!-- Three options: the current situation and the two scenarios -->
-      <div class="scenario-options" role="radiogroup" aria-label="Planning scenario">
-        <!-- Current situation, selected at start -->
-        <label class="check"><input type="radio" name="scenario" value="" checked> Current situation</label>
-        <!-- Five new supermarkets in HDB commercial blocks -->
-        <label class="check"><input type="radio" name="scenario" value="supermarket"> Five new supermarkets</label>
-        <!-- Five new clinics, chosen for older residents -->
-        <label class="check"><input type="radio" name="scenario" value="clinic"> Five new clinics (older residents)</label>
-      </div>
-      <!-- Sites, totals and before-and-after table, filled in by app.js -->
-      <div id="scenario-body" aria-live="polite"></div>
+      <!-- Folding section, closed at start -->
+      <details class="fold" id="planning-fold">
+        <!-- Heading that opens the section, with the current choice on the right -->
+        <summary><span class="fold-title">Planning scenario</span><span class="fold-status" id="planning-status">Current situation</span></summary>
+        <!-- What the section does -->
+        <p class="hint">See how five new facilities, chosen in Notebook 05, would change walking access within 10 minutes.</p>
+        <!-- Three options: the current situation and the two scenarios -->
+        <div class="scenario-options" role="radiogroup" aria-label="Planning scenario">
+          <!-- Current situation, selected at start -->
+          <label class="check"><input type="radio" name="scenario" value="" checked> Current situation</label>
+          <!-- Five new supermarkets in HDB commercial blocks -->
+          <label class="check"><input type="radio" name="scenario" value="supermarket"> Five new supermarkets</label>
+          <!-- Five new clinics, chosen for older residents -->
+          <label class="check"><input type="radio" name="scenario" value="clinic"> Five new clinics (older residents)</label>
+        </div>
+        <!-- Sites, totals and before-and-after table, filled in by app.js -->
+        <div id="scenario-body" aria-live="polite"></div>
+      </details>
     </section>
 
     <!-- Amenity layer chooser -->
@@ -201,9 +247,11 @@
   <script src="data_homes.js"></script>
   <!-- Amenity records written by Notebook 06 (defines AMENITIES) -->
   <script src="data_amenities.js"></script>
+  <!-- Planning-area and subzone outlines written by Notebook 06c (defines AREAS) -->
+  <script src="data_areas.js?v=2026-10-23"></script>
   <!-- Planning scenarios written by Notebook 06b from the Notebook 05 sites (defines PLANNING) -->
   <script src="data_planning.js"></script>
   <!-- Map logic; it loads data_reach.js (walking routes from Notebook 07) after the map is drawn -->
-  <script src="app.js"></script>
+  <script src="app.js?v=2026-10-23"></script>
 </body>
 </html>
