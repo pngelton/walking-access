@@ -1026,3 +1026,19 @@ select {
   /* Space around */
   margin: 6px 0 0;
 }
+
+/* Note on a site found after the scenario was built (for example an existing supermarket) */
+.pop-flag {
+  /* Small text */
+  font-size: 12px;
+  /* Amber left border so the note stands out */
+  border-left: 3px solid #c4581c;
+  /* Light amber background that stays readable on the white popup */
+  background: #fdf1e7;
+  /* Dark text on the light background */
+  color: #3b2a1a;
+  /* Space inside */
+  padding: 4px 8px;
+  /* Space around */
+  margin: 6px 0;
+}

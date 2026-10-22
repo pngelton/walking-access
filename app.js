@@ -1246,6 +1246,8 @@ function sitePopupHtml(sc, site) {
   const facility = sc.site_name.replace(/^New /, "").toLowerCase();
   // Name, order and address of the site
   return `<strong>${sc.site_name} ${site.step}</strong> (scenario)<br>${esc(site.address)}, ${esc(site.area)}`
+    // Note on facts found after the site was chosen, if any
+    + (site.note ? `<p class="pop-flag">${esc(site.note)}</p>` : "")
     // Units that gain their first amenity of the domain at this step
     + `<p class="pop-p">Dwelling units newly within a 10-minute walk of ${sc.label.toLowerCase()}: <strong>${fmt(site.units_gained)}</strong> (HDB ${fmt(site.hdb_units)}, private ${fmt(site.private_units)})`
     // Older residents served, for the clinic scenario
@@ -1316,7 +1318,7 @@ function renderScenarioPanel() {
   // Format a whole number with thousands separators
   const fmt = (x) => x.toLocaleString("en-SG");
   // One clickable list item per site
-  const sites = sc.sites.map((site) => `<li data-step="${site.step}"><span class="site-num" style="background:${DOMAIN_COLOURS[sc.label]}">${site.step}</span><span>${esc(site.address)}<br><small>${esc(site.area)}</small></span><span class="poi-time">+${fmt(site.units_gained)}<br><small>units</small></span></li>`).join("");
+  const sites = sc.sites.map((site) => `<li data-step="${site.step}"><span class="site-num" style="background:${DOMAIN_COLOURS[sc.label]}">${site.step}</span><span>${esc(site.address)}<br><small>${esc(site.area)}${site.note ? " · supermarket already open, see popup" : ""}</small></span><span class="poi-time">+${fmt(site.units_gained)}<br><small>units</small></span></li>`).join("");
   // Share of units with access before and after, per housing group
   const rows = ["HDB", "Private"].map((g) => `<tr><td>${g}</td><td>${sc.access[g].before.toFixed(1)}</td><td>${sc.access[g].after.toFixed(1)}</td><td>+${(sc.access[g].after - sc.access[g].before).toFixed(1)}</td></tr>`).join("");
   // Note shown when the map is at 5 minutes, where the scenario changes nothing
@@ -1377,8 +1379,8 @@ document.getElementById("scenario-body").addEventListener("click", (e) => {
   if (!li) return;
   // Marker of that site
   const m = siteMarkers.get(Number(li.dataset.step));
-  // Move the map to the site at street level or closer
-  map.setView(m.getLatLng(), Math.max(map.getZoom(), 16));
+  // Move the map to the site at street level or closer, without animation so the popup can then pan fully into view
+  map.setView(m.getLatLng(), Math.max(map.getZoom(), 16), { animate: false });
   // Open its details
   m.openPopup();
 });
