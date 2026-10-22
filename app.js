@@ -1759,7 +1759,7 @@ function drawAreas() {
     // Note for the chosen mode
     ? { rank: "Areas are sorted by the average score of their homes and split into fifths, so the colours show rank, not the score. Tap an area for both.", score: "Average score of all homes in each area, weighted by units, in the same colours as the building dots. Tap an area for details.", gap: "Private average minus HDB average inside each area. Grey areas have only one housing group, so there is no gap to measure. Tap an area for details." }[areaState.mode]
     // Note while the view is off
-    : "Tap an area on the map for its scores and rank. The walking-time switch and the sliders above also change the areas.";
+    : "Tap an area on the map for its scores and rank. The walking-time switch, the sliders and the planning scenario above also change the areas.";
   // Nothing more to draw while the view is off
   if (!areaState.level) return;
   // Values of every area under the current settings
