@@ -80,11 +80,11 @@
         <!-- Step 1: counts -->
         <p><strong>1. Count what is within reach.</strong> For each building and each of the five domains (Food, Groceries, Healthcare, Parks &amp; Recreation, Public Transport), the map counts the amenities reachable along walking routes within the selected time. The exits of one MRT station count as one station, and each park counts once.</p>
         <!-- Step 2: normalisation -->
-        <p><strong>2. Put the domains on the same scale (normalisation).</strong> The domains have very different numbers of amenities: a building may reach 20 bus stops but only one supermarket. Each count is therefore compared with a fixed benchmark: the count that 95% of buildings stay at or below within 10 minutes. The benchmarks are Food 9, Groceries 6, Healthcare 23, Parks &amp; Recreation <span id="cap-park">5</span> and Public Transport 30. A count at or above the benchmark scores 1; a count of half the benchmark scores 0.5.</p>
+        <p><strong>2. Put the domains on the same scale (normalisation).</strong> The domains have very different numbers of amenities: a building may reach 20 bus stops but only one supermarket. Each count is therefore compared with a fixed benchmark: the count that 95% of buildings stay at or below within 10 minutes. The benchmarks are Food 9, Groceries 7, Healthcare 23, Parks &amp; Recreation <span id="cap-park">5</span> and Public Transport 30. A count at or above the benchmark scores 1; a count of half the benchmark scores 0.5.</p>
         <!-- Step 3: weights -->
         <p><strong>3. Combine the domains.</strong> The five domain scores are averaged using the weights set with the sliders (equal by default) and shown on a 0–100 scale.</p>
         <!-- What 100 means -->
-        <p><strong>What 100 means.</strong> A building scores 100 when it reaches the benchmark in every domain. This is possible: 20 buildings score 100 within 10 minutes with equal weights.</p>
+        <p><strong>What 100 means.</strong> A building scores 100 when it reaches the benchmark in every domain. This is possible: 46 buildings score 100 within 10 minutes with equal weights.</p>
         <!-- Absolute vs relative -->
         <p><strong>Comparing scores.</strong> The benchmark is fixed, so a score shows how much a building can reach, not its rank among other buildings. Because the same benchmark applies to both walking times and to any weights, a score changes only when what the building can reach, or the weights, change.</p>
         <!-- What the score is not -->
@@ -180,7 +180,7 @@
     </section>
 
     <!-- Source note -->
-    <p class="source">Data: HDB, URA, NParks, NEA, MOH, SFA, LTA, OpenStreetMap; walk network v0.3. GE5219 Spatial Programming Final Project, National University of Singapore, 2026.</p>
+    <p class="source">Data: HDB, URA, NParks, NEA, MOH, LTA, OpenStreetMap (supermarkets as of October 2026); walk network v0.3. GE5219 Spatial Programming Final Project, National University of Singapore, 2026.</p>
   </aside>
 
   <!-- Map container -->

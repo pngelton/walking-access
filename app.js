@@ -27,7 +27,7 @@ const COLOURS_LIGHT = ["#fde725", "#7ad151", "#22a884", "#2a788e", "#414487"];
 // Colour per class on a dark page: dark blue (low score) to yellow (high score), so higher scores stay the most visible
 const COLOURS_DARK = ["#3e4a89", "#2a788e", "#22a884", "#7ad151", "#fde725"];
 // Normalisation caps per domain (outputs/normalisation_caps.csv): the 95th percentile of the 10-minute counts
-const CAPS = { food: 9, groc: 6, health: 23, park: 5, pt: 30 };
+const CAPS = { food: 9, groc: 7, health: 23, park: 5, pt: 30 };
 // Parks & Recreation cap without paid gyms (outputs/no_paid_gyms/normalisation_caps.csv)
 const PARK_CAP_NO_GYMS = 4;
 // Opacity of the home dots: normal, and faded while a building is selected
