@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<!-- GE5219 Final Project: interactive map of 5- and 10-minute walking accessibility -->
+<html lang="en">
+<head>
+  <!-- Character set, so names with accents display correctly -->
+  <meta charset="utf-8">
+  <!-- Scale the page to the device width (phones and tablets) -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Title shown in the browser tab -->
+  <title>Walking Access in Singapore · GE5219 (version 2 draft)</title>
+  <!-- Leaflet map library styles (loaded from the cdnjs content network) -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+  <!-- Page styles for this map (the ?v= date makes browsers fetch the new file after an update instead of a stored copy) -->
+  <link rel="stylesheet" href="style.css?v=v2-2026-10-26">
+</head>
+<body>
+  <!-- Side panel with the controls and the summary -->
+  <aside id="panel">
+    <!-- Phones only: handle at the top of the bottom sheet; a tap or a swipe opens or closes the panel (hidden on wider screens by style.css) -->
+    <button type="button" id="sheet-handle" aria-controls="panel" aria-expanded="false">
+      <!-- Grip bar that shows the sheet can be pulled -->
+      <span class="sheet-grip" aria-hidden="true"></span>
+      <!-- Short page title, so the page is named while the panel is closed -->
+      <span class="sheet-title">Walking access to daily needs</span>
+      <!-- What a tap will do; the text is set by app.js -->
+      <span class="sheet-action" id="sheet-action">Show controls</span>
+    </button>
+    <!-- Page heading -->
+    <h1>Walking access to daily needs</h1>
+    <!-- One short line on what the map is -->
+    <p class="lead">How far is a 5- or 10-minute walk to food, groceries, healthcare, parks and transport from any home in Singapore?</p>
+
+    <!-- Group 1: Find a location -->
+    <div class="group" id="group-find">
+      <!-- Group heading with its number -->
+      <h2 class="group-title"><span class="step-no">1</span> Find a location</h2>
+      <!-- Search for a building (the id lets phones show this section first) -->
+      <section id="search-section">
+        <!-- Label of the search box -->
+        <label class="sr-label" for="search">Postal code, address or condo name</label>
+        <!-- Search box: postal code, address or condominium name -->
+        <input type="search" id="search" placeholder="Postal code, address or condo name" autocomplete="off">
+        <!-- One-click start: find the home building nearest to the user's location (the browser asks for permission) -->
+        <button type="button" class="gps-button" id="use-location">Use my location</button>
+        <!-- Result of the location request, filled in by app.js -->
+        <p class="hint" id="location-note" hidden></p>
+        <!-- Matching buildings are listed here by app.js -->
+        <ul id="search-results" role="listbox" aria-label="Search results"></ul>
+        <!-- Short instruction shown until a building is selected -->
+        <p class="hint" id="select-hint">Click a building, or pick one from the search results, to see the amenities within walking reach.</p>
+      </section>
+      <!-- Details of the selected building: filled in by app.js, hidden until a building is selected -->
+      <section id="selection" hidden>
+        <!-- Section heading with a button to clear the selection -->
+        <div class="selection-head">
+          <!-- Heading -->
+          <h2>Selected building</h2>
+          <!-- Button that clears the selection -->
+          <button type="button" id="clear-selection">Clear selection</button>
+        </div>
+        <!-- Switch that hides the other buildings for a cleaner view -->
+        <label class="check"><input type="checkbox" id="hide-others"> Hide other buildings</label>
+        <!-- Address, counts and the list of reachable amenities -->
+        <div id="selection-body" aria-live="polite"></div>
+        <!-- How the distances are measured -->
+        <p class="note">Walking times follow the pedestrian network (footpaths, crossings, overhead bridges, linkways and HDB void decks), not straight-line distance from the building. Speed: 4.8 km/h, so 5 min = 400 m and 10 min = 800 m.</p>
+        <!-- Key to the outlines drawn on the map -->
+        <p class="hint"><span class="line-key solid"></span> solid line, darker shade: area reachable within 5 min (400 m)<br><span class="line-key dashed"></span> dashed line, lighter shade: area reachable within 10 min (800 m)<br>The outlines trace the walking paths reachable along the network, so they are not circles; inward notches are directions with no path. They are approximate and are not used in the score. The key in the lower-left corner of the map explains the symbols.</p>
+      </section>
+    </div>
+
+    <!-- Group 2: Explore the map -->
+    <div class="group" id="group-explore">
+      <!-- Group heading with its number -->
+      <h2 class="group-title"><span class="step-no">2</span> Explore the map</h2>
+      <!-- Walking-time switch -->
+      <section>
+        <!-- Section heading -->
+        <h2>Walking time</h2>
+        <!-- Two radio buttons: 5 or 10 minutes -->
+        <div class="segmented" role="radiogroup" aria-label="Walking time">
+          <!-- 5-minute option (400 m) -->
+          <label><input type="radio" name="threshold" value="5"> 5 min (400 m)</label>
+          <!-- 10-minute option (800 m), selected at start -->
+          <label><input type="radio" name="threshold" value="10" checked> 10 min (800 m)</label>
+        </div>
+        <!-- One short line; the details fold away -->
+        <p class="hint">Distances follow walking routes at 4.8 km/h: 5 min is 400 m, 10 min is 800 m.</p>
+        <!-- Longer explanation, folded until the reader asks for it -->
+        <details class="more">
+          <!-- Link that opens the explanation -->
+          <summary>More about this</summary>
+          <p class="hint">Choose how far to look for daily needs from each building. Each score updates to count the amenities reachable within the selected time along walking routes (footpaths, crossings, overhead bridges, linkways and HDB void decks), not in a straight line. At 4.8 km/h, 5 minutes is 400 m and 10 minutes is 800 m.</p>
+          <p class="hint">Both settings use the same benchmark, so scores can be compared between them. Few buildings have much within 5 minutes, so most score below 20 at that setting.</p>
+        </details>
+      </section>
+      <!-- What to show on the map: large on/off buttons -->
+      <section id="layers-section">
+        <!-- Section heading -->
+        <h2>Show on the map</h2>
+        <!-- Housing groups: the original checkboxes, styled as on/off buttons -->
+        <div class="toggle-row" role="group" aria-label="Housing groups">
+          <!-- HDB homes -->
+          <label class="toggle"><input type="checkbox" id="show-hdb" checked><span>HDB homes</span></label>
+          <!-- Private homes -->
+          <label class="toggle"><input type="checkbox" id="show-private" checked><span>Private homes</span></label>
+        </div>
+        <!-- Amenity domains: one button per domain; app.js fills them in -->
+        <p class="hint">Amenities (one type at a time):</p>
+        <div class="toggle-row" id="amenity-toggles" role="group" aria-label="Amenities"></div>
+        <!-- The original drop-down, kept hidden so the existing code keeps working -->
+        <select id="amenity-domain" aria-label="Amenity domain" hidden></select>
+      </section>
+      <!-- Planning scenarios from Notebook 05; hidden by app.js when data_planning.js is missing -->
+      <section id="planning-section">
+        <!-- Folding section, closed at start -->
+        <details class="fold" id="planning-fold">
+          <!-- Heading that opens the section, with the current choice on the right -->
+          <summary><span class="fold-title">Planning scenario</span><span class="fold-status" id="planning-status">Current situation</span></summary>
+          <!-- What the section does -->
+          <p class="hint">See how five new facilities, chosen in Notebook 05, would change walking access within 10 minutes.</p>
+          <!-- Three options: the current situation and the two scenarios -->
+          <div class="scenario-options" role="radiogroup" aria-label="Planning scenario">
+            <!-- Current situation, selected at start -->
+            <label class="check"><input type="radio" name="scenario" value="" checked> Current situation</label>
+            <!-- Five new supermarkets in HDB commercial blocks -->
+            <label class="check"><input type="radio" name="scenario" value="supermarket"> Five new supermarkets</label>
+            <!-- Five new clinics, chosen for older residents -->
+            <label class="check"><input type="radio" name="scenario" value="clinic"> Five new clinics (older residents)</label>
+          </div>
+          <!-- Sites, totals and before-and-after table, filled in by app.js -->
+          <div id="scenario-body" aria-live="polite"></div>
+        </details>
+      </section>
+      <!-- Area views: planning areas or subzones coloured by rank, score or gap; hidden by app.js when data_areas.js is missing -->
+      <section id="areas-section">
+        <!-- Folding section, closed at start -->
+        <details class="fold" id="areas-fold">
+          <!-- Heading that opens the section, with the current choice on the right -->
+          <summary><span class="fold-title">Compare areas</span><span class="fold-status" id="areas-status">Off</span></summary>
+          <!-- What the section does -->
+          <p class="hint">See how whole neighbourhoods compare, instead of single buildings.</p>
+          <!-- Step 1: area level -->
+          <fieldset class="step">
+            <!-- Step title with its number -->
+            <legend><span class="step-no">1</span> Choose the areas</legend>
+            <!-- Three options side by side -->
+            <div class="segmented three" role="radiogroup" aria-label="Area level">
+              <!-- Buildings only, selected at start -->
+              <label><input type="radio" name="area-level" value="" checked> Buildings only</label>
+              <!-- 55 planning areas -->
+              <label><input type="radio" name="area-level" value="pa"> Planning areas <small>55, large</small></label>
+              <!-- 332 subzones -->
+              <label><input type="radio" name="area-level" value="sz"> Subzones <small>332, detailed</small></label>
+            </div>
+          </fieldset>
+          <!-- Step 2: what the colours show; disabled until an area level is chosen -->
+          <fieldset class="step" id="area-mode-step" disabled>
+            <!-- Step title with its number -->
+            <legend><span class="step-no">2</span> Choose what the colours show</legend>
+            <!-- Shown while step 1 is still "Buildings only" -->
+            <p class="hint" id="area-mode-wait">Choose planning areas or subzones first.</p>
+            <!-- One option per row, each with a short explanation -->
+            <div class="mode-options" role="radiogroup" aria-label="Colour areas by">
+              <!-- Rank, the default -->
+              <label class="mode-option"><input type="radio" name="area-mode" value="rank" checked><span><strong>Rank</strong><small>How each area compares with the others, from the top 20% to the bottom 20%</small></span></label>
+              <!-- Mean score of all homes -->
+              <label class="mode-option"><input type="radio" name="area-mode" value="score"><span><strong>Score</strong><small>Average walking-access score of all homes in the area (0–100)</small></span></label>
+              <!-- Private minus HDB -->
+              <label class="mode-option"><input type="radio" name="area-mode" value="gap"><span><strong>Gap</strong><small>Private score minus HDB score inside the area: which group has better access</small></span></label>
+            </div>
+          </fieldset>
+          <!-- Explanation of the chosen view, filled in by app.js -->
+          <p class="hint" id="areas-hint">Tap an area on the map for its scores and rank. The walking-time switch, the sliders and the planning scenario above also change the areas.</p>
+        </details>
+      </section>
+      <!-- Domain weights -->
+      <section>
+        <!-- Folding section, closed at start -->
+        <details class="fold" id="weights-fold">
+        <!-- Heading that opens the section -->
+        <summary><span class="fold-title">Importance of each domain</span><span class="fold-status">Equal</span></summary>
+        <!-- Short instruction -->
+        <p class="hint">Move a slider to give a domain more or less weight. Shares are rescaled to 100%.</p>
+        <!-- The five sliders are added here by app.js -->
+        <div id="sliders"></div>
+        <!-- Preset buttons -->
+        <div class="buttons">
+          <!-- Equal weights, as in the report -->
+          <button type="button" id="preset-equal">Equal weights</button>
+          <!-- Example weights for older residents -->
+          <button type="button" id="preset-older">Older residents</button>
+        </div>
+        <!-- Paid-gym switch -->
+        <label class="check"><input type="checkbox" id="use-gyms" checked> Count paid gyms under Parks &amp; Recreation</label>
+        </details>
+      </section>
+    </div>
+
+    <!-- Group 3: Understand the map -->
+    <div class="group" id="group-understand">
+      <!-- Group heading with its number -->
+      <h2 class="group-title"><span class="step-no">3</span> Understand the map</h2>
+      <!-- Summary table that updates with every change -->
+      <section>
+        <!-- Section heading -->
+        <h2>HDB and private homes compared</h2>
+        <!-- The table is filled in by app.js -->
+        <table id="summary" aria-live="polite"></table>
+        <!-- Note on how the values are computed -->
+        <p class="hint">Means are weighted by dwelling units. "Within subzone" compares HDB and private homes only inside the 124 subzones that have both.</p>
+      </section>
+      <!-- Explanation of the score, folded by default -->
+      <section>
+        <!-- Folding explanation -->
+        <details class="explain">
+          <!-- Heading that opens the explanation -->
+          <summary>How is the score calculated?</summary>
+          <!-- Step 1: counts -->
+          <p><strong>1. Count what is within reach.</strong> For each building and each of the five domains (Food, Groceries, Healthcare, Parks &amp; Recreation, Public Transport), the map counts the amenities reachable along walking routes within the selected time. The exits of one MRT station count as one station, and each park counts once.</p>
+          <!-- Step 2: normalisation -->
+          <p><strong>2. Put the domains on the same scale (normalisation).</strong> The domains have very different numbers of amenities: a building may reach 20 bus stops but only one supermarket. Each count is therefore compared with a fixed benchmark: the count that 95% of buildings stay at or below within 10 minutes. The benchmarks are Food 9, Groceries 7, Healthcare 23, Parks &amp; Recreation <span id="cap-park">5</span> and Public Transport 30. A count at or above the benchmark scores 1; a count of half the benchmark scores 0.5.</p>
+          <!-- Step 3: weights -->
+          <p><strong>3. Combine the domains.</strong> The five domain scores are averaged using the weights set with the sliders (equal by default) and shown on a 0–100 scale.</p>
+          <!-- What 100 means -->
+          <p><strong>What 100 means.</strong> A building scores 100 when it reaches the benchmark in every domain. This is possible: 46 buildings score 100 within 10 minutes with equal weights.</p>
+          <!-- Absolute vs relative -->
+          <p><strong>Comparing scores.</strong> The benchmark is fixed, so a score shows how much a building can reach, not its rank among other buildings. Because the same benchmark applies to both walking times and to any weights, a score changes only when what the building can reach, or the weights, change.</p>
+          <!-- What the score is not -->
+          <p><strong>What the score does not mean.</strong> A score of 70 does not mean that 70% of daily needs are met. The score measures access to amenities by distance only; it does not measure walking comfort, shade, safety, or the quality and price of the amenities.</p>
+        </details>
+      </section>
+      <!-- Project information, folded -->
+      <section>
+        <!-- Folding section, closed at start -->
+        <details class="fold">
+          <!-- Heading that opens the section -->
+          <summary><span class="fold-title">About this project</span></summary>
+          <!-- Course and project title -->
+          <p class="project-title">GE5219 Spatial Programming · Final Project<br><strong>A 5- and 10-Minute Network Accessibility Assessment of HDB and Private Residential Buildings in Singapore: Mapping Walking Accessibility at Building Level</strong></p>
+          <!-- One-sentence description of the map -->
+          <p class="hint">Each dot is a residential building. Its colour shows its walking-access score from 0 to 100: higher scores mean better access on foot to food, groceries, healthcare, parks and public transport. Walking distances follow the pedestrian network, not straight lines.</p>
+          <!-- Project team -->
+          <div>
+            <!-- Section heading -->
+            <h3>Project team</h3>
+            <!-- Team members, surnames in capitals -->
+            <ul class="team">
+              <!-- Team member -->
+              <li>GUO Junshan</li>
+              <!-- Team member -->
+              <li>HU Runrun</li>
+              <!-- Team member -->
+              <li>LI Jianshu</li>
+              <!-- Team member -->
+              <li>YAO Zhuowei</li>
+              <!-- Team member -->
+              <li>YU Feiran</li>
+              <!-- Team member -->
+              <li>PNG Yi Kai Elton</li>
+            </ul>
+          </div>
+          <!-- Source note -->
+          <p class="source">Data: HDB, URA, NParks, NEA, MOH, LTA, OpenStreetMap (supermarkets as of October 2026); walk network v0.3. GE5219 Spatial Programming Final Project, National University of Singapore, 2026.</p>
+        </details>
+      </section>
+    </div>
+
+  </aside>
+
+  <!-- Map container -->
+  <main id="map" aria-label="Map of residential buildings coloured by walking-access score"></main>
+
+  <!-- First-visit card over the map: the obvious first step (search or use my location) -->
+  <div id="welcome" role="dialog" aria-labelledby="welcome-title">
+    <!-- The card -->
+    <div class="welcome-card">
+      <!-- Title -->
+      <h2 id="welcome-title">Walking access to daily needs</h2>
+      <!-- What the map does, in one line -->
+      <p>See what you can reach on foot within 5 and 10 minutes of any home in Singapore.</p>
+      <!-- Search box for a postal code, address or condominium -->
+      <input type="search" id="welcome-search" placeholder="Enter a postal code, address or condo name" autocomplete="off" aria-label="Postal code, address or condo name">
+      <!-- Matching buildings, filled in by app.js -->
+      <ul id="welcome-results" role="listbox" aria-label="Search results"></ul>
+      <!-- GPS button -->
+      <button type="button" class="gps-button big" id="welcome-location">Use my location</button>
+      <!-- Result of the location request -->
+      <p class="hint" id="welcome-note" hidden></p>
+      <!-- Skip the first step and look at the whole map -->
+      <button type="button" class="link-button" id="welcome-skip">Or explore the whole map</button>
+    </div>
+    <!-- Second card: what the website is about, in brief -->
+    <div class="welcome-card welcome-about" aria-labelledby="welcome-about-title">
+      <!-- Small heading -->
+      <h3 id="welcome-about-title">About this map</h3>
+      <!-- Short list of what the reader will find -->
+      <ul>
+        <!-- What a dot is -->
+        <li><strong>Each dot is a home.</strong> HDB blocks and private residential buildings across Singapore.</li>
+        <!-- What the colour means -->
+        <li><strong>Its colour is a score from 0 to 100.</strong> Higher means more food, groceries, healthcare, parks and public transport within a 5- or 10-minute walk.</li>
+        <!-- How distance is measured -->
+        <li><strong>Distances follow real walking routes,</strong> such as footpaths, crossings and overhead bridges, not straight lines.</li>
+        <!-- What the reader can do -->
+        <li><strong>Click a building</strong> to see what is within reach, or compare HDB and private homes and whole planning areas.</li>
+      </ul>
+      <!-- Course credit -->
+      <p class="source">GE5219 Spatial Programming Final Project, National University of Singapore, 2026. This is the version 2 draft; <a href="../">open the current site</a>.</p>
+    </div>
+  </div>
+
+  <!-- Leaflet map library (loaded from the cdnjs content network) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+  <!-- Home records written by Notebook 06 (defines HOMES) -->
+  <script src="../data_homes.js"></script>
+  <!-- Amenity records written by Notebook 06 (defines AMENITIES) -->
+  <script src="../data_amenities.js"></script>
+  <!-- Planning-area and subzone outlines written by Notebook 06c (defines AREAS) -->
+  <script src="../data_areas.js?v=2026-10-23"></script>
+  <!-- Planning scenarios written by Notebook 06b from the Notebook 05 sites (defines PLANNING) -->
+  <script src="../data_planning.js"></script>
+  <!-- Map logic; it loads data_reach.js (walking routes from Notebook 07) after the map is drawn -->
+  <script src="app.js?v=v2-2026-10-26"></script>
+</body>
+</html>

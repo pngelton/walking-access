@@ -1,0 +1,2018 @@
+/* GE5219 Final Project: styles for the walking-access map */
+
+/* Colour and size settings used across the page (light theme) */
+:root {
+  /* Page background */
+  --bg: #ffffff;
+  /* Background of boxes on the map (legend, popups, buttons) */
+  --surface: #ffffff;
+  /* Main text colour */
+  --ink: #1f2328;
+  /* Secondary text colour */
+  --muted: #5b6168;
+  /* Thin divider lines */
+  --line: #e3e5e8;
+  /* Background of a highlighted search result */
+  --hover: #eef4fc;
+  /* Accent colour for controls (blue, same hue as the score scale) */
+  --accent: #1c5cab;
+  /* Sea colour behind the base map */
+  --sea: #d6e0e8;
+  /* Filter applied to the base-map image (none in the light theme) */
+  --basemap-filter: none;
+  /* Width of the side panel on wide screens */
+  --panel-w: 340px;
+}
+
+/* Dark theme when the device prefers dark and the viewer has not chosen light */
+@media (prefers-color-scheme: dark) {
+  /* Dark values of the colour settings */
+  :root:not([data-theme="light"]) {
+    /* Page background */
+    --bg: #15181c;
+    /* Background of boxes on the map */
+    --surface: #1f2328;
+    /* Main text colour */
+    --ink: #e6e8eb;
+    /* Secondary text colour */
+    --muted: #a3a9b1;
+    /* Thin divider lines */
+    --line: #343a42;
+    /* Background of a highlighted search result */
+    --hover: #22324a;
+    /* Accent colour for controls */
+    --accent: #6da7ec;
+    /* Sea colour behind the base map */
+    --sea: #1d252d;
+    /* Darken the base-map image while keeping its hues */
+    --basemap-filter: invert(1) hue-rotate(180deg) brightness(0.85);
+    /* Dark form controls and scrollbars */
+    color-scheme: dark;
+  }
+}
+
+/* Dark theme chosen explicitly by the viewer */
+:root[data-theme="dark"] {
+  /* Page background */
+  --bg: #15181c;
+  /* Background of boxes on the map */
+  --surface: #1f2328;
+  /* Main text colour */
+  --ink: #e6e8eb;
+  /* Secondary text colour */
+  --muted: #a3a9b1;
+  /* Thin divider lines */
+  --line: #343a42;
+  /* Background of a highlighted search result */
+  --hover: #22324a;
+  /* Accent colour for controls */
+  --accent: #6da7ec;
+  /* Sea colour behind the base map */
+  --sea: #1d252d;
+  /* Darken the base-map image while keeping its hues */
+  --basemap-filter: invert(1) hue-rotate(180deg) brightness(0.85);
+  /* Dark form controls and scrollbars */
+  color-scheme: dark;
+}
+
+/* Remove the default page margin and use a clean system font */
+html, body {
+  /* No outer margin, so the map fills the window */
+  margin: 0;
+  /* Full window height (inside any safe-area padding) */
+  height: 100%;
+  /* System font stack */
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  /* Base text colour */
+  color: var(--ink);
+  /* Page background */
+  background: var(--bg);
+}
+
+/* Lay out the panel and the map side by side */
+body {
+  /* Two columns: panel and map */
+  display: grid;
+  /* Fixed panel width, map takes the rest */
+  grid-template-columns: var(--panel-w) 1fr;
+}
+
+/* Side panel */
+#panel {
+  /* Scroll inside the panel when its content is taller than the window */
+  overflow-y: auto;
+  /* Inner spacing */
+  padding: 16px 18px;
+  /* Divider between panel and map */
+  border-right: 1px solid var(--line);
+  /* Smaller base font for the controls */
+  font-size: 14px;
+  /* Full height of the page */
+  height: 100%;
+  /* Include padding in the height */
+  box-sizing: border-box;
+}
+
+/* Map area */
+#map {
+  /* Full height of the page */
+  height: 100%;
+  /* Sea colour shows where the base map has no land */
+  background: var(--sea);
+}
+
+/* Base-map image: darkened in the dark theme */
+.basemap-img {
+  /* Filter from the theme settings */
+  filter: var(--basemap-filter);
+}
+
+/* Map controls, popups and attribution follow the page theme */
+.leaflet-bar a, .leaflet-popup-content-wrapper, .leaflet-popup-tip, .leaflet-control-layers, .leaflet-container .leaflet-control-attribution {
+  /* Box background */
+  background: var(--surface);
+  /* Text colour */
+  color: var(--ink);
+}
+
+/* Links inside the map follow the accent colour */
+.leaflet-container a {
+  /* Accent colour */
+  color: var(--accent);
+}
+
+/* Page heading */
+h1 {
+  /* Heading size */
+  font-size: 19px;
+  /* Space below */
+  margin: 0 0 6px;
+}
+
+/* Section headings */
+h2 {
+  /* Small, bold headings */
+  font-size: 13px;
+  /* Upper-case labels */
+  text-transform: uppercase;
+  /* Slight letter spacing for upper case */
+  letter-spacing: 0.04em;
+  /* Secondary colour */
+  color: var(--muted);
+  /* Space around */
+  margin: 0 0 8px;
+}
+
+/* Each control group */
+section {
+  /* Divider above each group */
+  border-top: 1px solid var(--line);
+  /* Space inside the group */
+  padding: 12px 0;
+}
+
+/* Introduction text */
+.lead {
+  /* Secondary colour */
+  color: var(--muted);
+  /* Space below */
+  margin: 0 0 12px;
+}
+
+/* Small helper text */
+.hint, .source {
+  /* Secondary colour */
+  color: var(--muted);
+  /* Smaller text */
+  font-size: 12px;
+  /* Space around */
+  margin: 6px 0;
+}
+
+/* Radio buttons shown as a two-part switch */
+.segmented {
+  /* Place the two options side by side */
+  display: flex;
+  /* Space between options */
+  gap: 6px;
+}
+
+/* One option of the switch */
+.segmented label {
+  /* Each option takes half the width */
+  flex: 1;
+  /* Border around each option */
+  border: 1px solid var(--line);
+  /* Rounded corners */
+  border-radius: 6px;
+  /* Inner spacing */
+  padding: 6px 8px;
+  /* Pointer cursor */
+  cursor: pointer;
+}
+
+/* Checkbox rows */
+.check {
+  /* One checkbox per line */
+  display: block;
+  /* Space between rows */
+  margin: 4px 0;
+  /* Pointer cursor */
+  cursor: pointer;
+}
+
+/* One slider row: label, slider, share */
+.slider-row {
+  /* Three columns */
+  display: grid;
+  /* Label, slider, share */
+  grid-template-columns: 130px 1fr 42px;
+  /* Centre the items vertically */
+  align-items: center;
+  /* Space between columns */
+  gap: 8px;
+  /* Space between rows */
+  margin: 4px 0;
+}
+
+/* Slider control */
+.slider-row input[type="range"] {
+  /* Fill the column */
+  width: 100%;
+  /* Use the accent colour for the slider */
+  accent-color: var(--accent);
+}
+
+/* Weight share shown at the end of each slider row */
+.slider-row output {
+  /* Right-align the number */
+  text-align: right;
+  /* Digits of equal width, so numbers do not jump */
+  font-variant-numeric: tabular-nums;
+}
+
+/* Row of preset buttons */
+.buttons {
+  /* Buttons side by side */
+  display: flex;
+  /* Space between buttons */
+  gap: 6px;
+  /* Space around */
+  margin: 8px 0;
+}
+
+/* Buttons */
+button {
+  /* Inherit the page font */
+  font: inherit;
+  /* Smaller text */
+  font-size: 13px;
+  /* Inner spacing */
+  padding: 5px 10px;
+  /* Thin border */
+  border: 1px solid var(--line);
+  /* Rounded corners */
+  border-radius: 6px;
+  /* Box background from the theme */
+  background: var(--surface);
+  /* Text colour from the theme */
+  color: var(--ink);
+  /* Pointer cursor */
+  cursor: pointer;
+}
+
+/* Button hover state */
+button:hover {
+  /* Accent border on hover */
+  border-color: var(--accent);
+}
+
+/* Summary table */
+#summary {
+  /* Full panel width */
+  width: 100%;
+  /* Single lines between cells */
+  border-collapse: collapse;
+  /* Digits of equal width */
+  font-variant-numeric: tabular-nums;
+}
+
+/* Summary table cells */
+#summary th, #summary td {
+  /* Inner spacing */
+  padding: 4px 2px;
+  /* Line under each row */
+  border-bottom: 1px solid var(--line);
+  /* Numbers aligned right */
+  text-align: right;
+}
+
+/* First column holds the row labels */
+#summary th:first-child, #summary td:first-child {
+  /* Labels aligned left */
+  text-align: left;
+}
+
+/* Column headings of the summary table */
+#summary thead th {
+  /* Secondary colour */
+  color: var(--muted);
+  /* Normal weight */
+  font-weight: 600;
+  /* Smaller text */
+  font-size: 12px;
+}
+
+/* Search box */
+#search {
+  /* Background from the theme */
+  background: var(--surface);
+  /* Text colour from the theme */
+  color: var(--ink);
+  /* Inherit the page font */
+  font: inherit;
+  /* Full panel width */
+  width: 100%;
+  /* Inner spacing */
+  padding: 6px 8px;
+  /* Thin border */
+  border: 1px solid var(--line);
+  /* Rounded corners */
+  border-radius: 6px;
+  /* Include padding in the width */
+  box-sizing: border-box;
+}
+
+/* List of search results */
+#search-results {
+  /* No bullets */
+  list-style: none;
+  /* No indent */
+  padding: 0;
+  /* Space above */
+  margin: 4px 0 0;
+}
+
+/* One search result */
+#search-results li {
+  /* Inner spacing */
+  padding: 5px 6px;
+  /* Line between results */
+  border-bottom: 1px solid var(--line);
+  /* Pointer cursor */
+  cursor: pointer;
+}
+
+/* Highlighted search result (mouse or keyboard) */
+#search-results li:hover, #search-results li.active {
+  /* Light highlight from the theme */
+  background: var(--hover);
+}
+
+/* Second line of a search result (postal code and group) */
+#search-results small {
+  /* Secondary colour */
+  color: var(--muted);
+}
+
+/* Amenity drop-down */
+select {
+  /* Background from the theme */
+  background: var(--surface);
+  /* Text colour from the theme */
+  color: var(--ink);
+  /* Inherit the page font */
+  font: inherit;
+  /* Full width */
+  width: 100%;
+  /* Inner spacing */
+  padding: 5px;
+}
+
+/* Map legend box */
+.legend {
+  /* Box background from the theme */
+  background: var(--surface);
+  /* Text colour from the theme */
+  color: var(--ink);
+  /* Inner spacing */
+  padding: 8px 10px;
+  /* Rounded corners */
+  border-radius: 6px;
+  /* Soft shadow */
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  /* Text size (larger than before, so it reads on phones too) */
+  font-size: 14px;
+  /* Line height */
+  line-height: 20px;
+}
+
+/* Colour swatch in the legend */
+.legend i {
+  /* Square swatch */
+  display: inline-block;
+  /* Swatch width */
+  width: 18px;
+  /* Swatch height */
+  height: 18px;
+  /* Round swatch, like the dots on the map */
+  border-radius: 50%;
+  /* Thin outline, as on the map dots */
+  border: 1px solid rgba(85, 85, 85, 0.6);
+  /* Include the outline in the size */
+  box-sizing: border-box;
+  /* Space to the label */
+  margin-right: 8px;
+  /* Align with the text */
+  vertical-align: -4px;
+}
+
+/* One class row in the legend */
+.legend-row {
+  /* Space between rows */
+  margin: 2px 0;
+  /* Digits of equal width */
+  font-variant-numeric: tabular-nums;
+}
+
+/* Small explanatory lines in the legend */
+.legend-sub {
+  /* Secondary colour */
+  color: var(--muted);
+  /* Smaller text */
+  font-size: 12px;
+  /* Space below */
+  margin-bottom: 4px;
+  /* Keep the legend narrow */
+  max-width: 190px;
+  /* Normal line height for wrapped text */
+  line-height: 1.35;
+}
+
+/* "Higher access" and "Lower access" labels */
+.legend-end {
+  /* Secondary colour */
+  color: var(--muted);
+  /* Small capitals look like a label */
+  font-size: 12px;
+  /* Bold label */
+  font-weight: 600;
+  /* Space around */
+  margin: 4px 0 2px;
+}
+
+/* Folding score explanation */
+.explain summary {
+  /* Accent colour, so it reads as something to open */
+  color: var(--accent);
+  /* Bold */
+  font-weight: 600;
+  /* Pointer cursor */
+  cursor: pointer;
+}
+
+/* Paragraphs of the score explanation */
+.explain p {
+  /* Smaller text */
+  font-size: 13px;
+  /* Comfortable line height */
+  line-height: 1.45;
+  /* Space between paragraphs */
+  margin: 8px 0;
+}
+
+/* Popup table */
+.popup-table {
+  /* Single lines between cells */
+  border-collapse: collapse;
+  /* Digits of equal width */
+  font-variant-numeric: tabular-nums;
+}
+
+/* Popup table cells */
+.popup-table th, .popup-table td {
+  /* Inner spacing */
+  padding: 2px 6px;
+  /* Numbers aligned right */
+  text-align: right;
+}
+
+/* First column of the popup table */
+.popup-table th:first-child, .popup-table td:first-child {
+  /* Labels aligned left */
+  text-align: left;
+}
+
+/* Heading row of the selected-building section */
+.selection-head {
+  /* Heading on the left, button on the right */
+  display: flex;
+  /* Push the button to the right */
+  justify-content: space-between;
+  /* Centre both vertically */
+  align-items: center;
+}
+
+/* Heading inside that row */
+.selection-head h2 {
+  /* No extra space below, the row sets the spacing */
+  margin: 0;
+}
+
+/* Address of the selected building */
+.sel-address {
+  /* Slightly larger than the panel text */
+  font-size: 15px;
+  /* Space around */
+  margin: 8px 0 2px;
+}
+
+/* One domain group in the list of reachable amenities */
+.poi-group {
+  /* Space above each group */
+  margin-top: 10px;
+}
+
+/* Heading of a domain group */
+.poi-group summary {
+  /* Bold label */
+  font-weight: 600;
+  /* Pointer cursor, since the group can be folded */
+  cursor: pointer;
+}
+
+/* List of amenities in a group */
+.poi-list {
+  /* No bullets */
+  list-style: none;
+  /* No indent */
+  padding: 0;
+  /* Small space above */
+  margin: 4px 0 0;
+}
+
+/* One amenity in the list */
+.poi-list li {
+  /* Name on the left, time on the right */
+  display: flex;
+  /* Space between name and time */
+  justify-content: space-between;
+  /* Space between the two parts */
+  gap: 8px;
+  /* Inner spacing */
+  padding: 4px 4px;
+  /* Line between items */
+  border-bottom: 1px solid var(--line);
+  /* Pointer cursor: a click shows the amenity on the map */
+  cursor: pointer;
+}
+
+/* Highlight of an amenity under the mouse */
+.poi-list li:hover {
+  /* Highlight colour from the theme */
+  background: var(--hover);
+}
+
+/* Type of amenity under its name */
+.poi-list small {
+  /* Secondary colour */
+  color: var(--muted);
+}
+
+/* Walking time and distance of an amenity */
+.poi-time {
+  /* Keep the time on one line */
+  white-space: nowrap;
+  /* Digits of equal width */
+  font-variant-numeric: tabular-nums;
+  /* Right-align */
+  text-align: right;
+}
+
+/* Amenities beyond 5 minutes are shown in the secondary colour */
+.poi-far .poi-time {
+  /* Secondary colour */
+  color: var(--muted);
+}
+
+/* Colour swatch of a domain */
+.swatch {
+  /* Small round swatch */
+  display: inline-block;
+  /* Width */
+  width: 10px;
+  /* Height */
+  height: 10px;
+  /* Rounded square, like the amenity symbols on the map */
+  border-radius: 2px;
+  /* Space to the label */
+  margin-right: 6px;
+}
+
+/* Note on how distances are measured */
+.note {
+  /* Smaller text */
+  font-size: 12px;
+  /* Accent border on the left */
+  border-left: 3px solid var(--accent);
+  /* Space between border and text */
+  padding: 4px 8px;
+  /* Light background from the theme */
+  background: var(--hover);
+  /* Space around */
+  margin: 10px 0 6px;
+}
+
+/* Short line samples for the outline key */
+.line-key {
+  /* Line sample */
+  display: inline-block;
+  /* Length */
+  width: 18px;
+  /* No height; the border draws the line */
+  height: 0;
+  /* Align with the text */
+  vertical-align: middle;
+}
+
+/* Solid line sample (5-minute outline) */
+.line-key.solid {
+  /* Solid line in the accent colour */
+  border-top: 2px solid var(--accent);
+}
+
+/* Dashed line sample (10-minute outline) */
+.line-key.dashed {
+  /* Dashed line in the accent colour */
+  border-top: 2px dashed var(--accent);
+}
+
+/* Amenity symbol of a selected building (Leaflet adds this class to the symbol's box) */
+.poi-icon span {
+  /* Fill the symbol's box */
+  display: flex;
+  /* Full width of the box */
+  width: 100%;
+  /* Full height of the box */
+  height: 100%;
+  /* Centre the letter horizontally */
+  justify-content: center;
+  /* Centre the letter vertically */
+  align-items: center;
+  /* Slightly rounded square */
+  border-radius: 4px;
+  /* White outline so the symbol stands out on any base map */
+  border: 2px solid #ffffff;
+  /* Include the outline in the size */
+  box-sizing: border-box;
+  /* White letter */
+  color: #ffffff;
+  /* Small bold letter */
+  font: 700 11px/1 system-ui, sans-serif;
+  /* Soft shadow */
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+/* Amenities beyond 5 minutes: lighter symbol */
+.poi-icon-far span {
+  /* Partly transparent */
+  opacity: 0.7;
+  /* Smaller letter */
+  font-size: 9px;
+}
+
+/* Map key of a selected building: keep it narrow */
+.selection-key {
+  /* Width limit, so the notes wrap */
+  max-width: 250px;
+}
+
+/* One row of the map key: sample on the left, label on the right */
+.key-row {
+  /* Sample and label side by side */
+  display: flex;
+  /* Centre them vertically */
+  align-items: center;
+  /* Space between sample and label */
+  gap: 8px;
+  /* Space between rows */
+  margin: 3px 0;
+}
+
+/* Lettered amenity square in the map key, as drawn on the map */
+.key-symbol {
+  /* Fixed-size box */
+  display: inline-flex;
+  /* Width of the symbol */
+  width: 18px;
+  /* Height of the symbol */
+  height: 18px;
+  /* Centre the letter horizontally */
+  justify-content: center;
+  /* Centre the letter vertically */
+  align-items: center;
+  /* Rounded square */
+  border-radius: 4px;
+  /* White letter */
+  color: #ffffff;
+  /* Small bold letter */
+  font: 700 11px/1 system-ui, sans-serif;
+  /* Do not shrink in the row */
+  flex: none;
+}
+
+/* Orange ring of the selected building in the map key */
+.key-ring {
+  /* Fixed-size circle */
+  display: inline-block;
+  /* Width */
+  width: 14px;
+  /* Height */
+  height: 14px;
+  /* Orange ring, as on the map */
+  border: 3px solid #c4581c;
+  /* Round */
+  border-radius: 50%;
+  /* Do not shrink in the row */
+  flex: none;
+  /* Centre it in the column used by the outline samples */
+  margin: 0 3px;
+}
+
+/* SVG samples in the map key */
+.key-row svg {
+  /* Do not shrink in the row */
+  flex: none;
+}
+
+/* Handle of the phone bottom sheet: not shown on wider screens */
+#sheet-handle {
+  /* Hidden outside the narrow-screen rules below */
+  display: none;
+}
+
+/* Narrow screens (phones): map on top, panel as a bottom sheet that can be pulled up */
+@media (max-width: 760px) {
+  /* Sheet heights: closed (handle and search box), half open and fully open */
+  body {
+    /* Closed sheet: handle plus the search box */
+    --sheet-peek: 150px;
+    /* Height used now; app.js switches it with the classes below */
+    --sheet: var(--sheet-peek);
+    /* Map above, sheet below */
+    grid-template-columns: 1fr;
+    /* Map takes what the sheet leaves */
+    grid-template-rows: 1fr var(--sheet);
+    /* Older browsers: the whole window */
+    height: 100vh;
+    /* Newer browsers: the visible window, without the address bar */
+    height: 100dvh;
+    /* No page scrolling; the panel scrolls inside */
+    overflow: hidden;
+  }
+  /* Half-open sheet */
+  body.sheet-half {
+    /* About half the window */
+    --sheet: 55dvh;
+  }
+  /* Fully open sheet */
+  body.sheet-full {
+    /* Most of the window, leaving a strip of map to tap */
+    --sheet: 88dvh;
+  }
+  /* Panel as the bottom sheet */
+  #panel {
+    /* Second grid row, below the map */
+    grid-row: 2;
+    /* Fill its grid row */
+    height: auto;
+    /* Allow shrinking below its content height */
+    min-height: 0;
+    /* Stack the sections so the search box can come first */
+    display: flex;
+    /* One column */
+    flex-direction: column;
+    /* No side divider */
+    border-right: none;
+    /* Line above the sheet */
+    border-top: 1px solid var(--line);
+    /* Rounded top corners */
+    border-radius: 14px 14px 0 0;
+    /* Shadow, so the sheet reads as lying over the map */
+    box-shadow: 0 -4px 14px rgba(0, 0, 0, 0.18);
+    /* No inner space at the top: the handle sits there */
+    padding-top: 0;
+    /* Keep the last lines clear of the phone's home bar */
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    /* Smooth scrolling inside the sheet on touch screens */
+    -webkit-overflow-scrolling: touch;
+    /* Do not scroll the page when the sheet reaches its end */
+    overscroll-behavior: contain;
+    /* Above the map panes */
+    z-index: 1001;
+    /* Background, so the sheet is opaque */
+    background: var(--bg);
+  }
+  /* Keep each section at its natural height inside the flex column */
+  #panel > * {
+    /* Do not squeeze sections */
+    flex: none;
+  }
+  /* Handle bar of the sheet */
+  #sheet-handle {
+    /* Shown on phones */
+    display: grid;
+    /* Title on the left, action on the right */
+    grid-template-columns: 1fr auto;
+    /* Grip on its own row above */
+    grid-template-areas: "grip grip" "title action";
+    /* Centre the items vertically */
+    align-items: center;
+    /* Space between the parts */
+    gap: 4px 8px;
+    /* First item in the sheet */
+    order: -3;
+    /* Stay at the top while the sheet scrolls */
+    position: sticky;
+    /* Stick to the very top */
+    top: 0;
+    /* Above the sheet content */
+    z-index: 2;
+    /* Reach the sheet edges, past the panel padding */
+    margin: 0 -18px 8px;
+    /* Inner spacing, at least 44 px tall to tap */
+    padding: 8px 18px 10px;
+    /* Opaque, so content scrolls under it */
+    background: var(--bg);
+    /* No button border */
+    border: none;
+    /* Line under the handle */
+    border-bottom: 1px solid var(--line);
+    /* Square corners inside the rounded sheet */
+    border-radius: 14px 14px 0 0;
+    /* Full width */
+    width: calc(100% + 36px);
+    /* Left-aligned text */
+    text-align: left;
+    /* Readable size */
+    font-size: 15px;
+    /* Stop the browser from treating a drag on the handle as a page scroll */
+    touch-action: none;
+  }
+  /* Grip bar */
+  .sheet-grip {
+    /* Top row */
+    grid-area: grip;
+    /* Centred */
+    justify-self: center;
+    /* Bar size */
+    width: 40px;
+    /* Bar height */
+    height: 4px;
+    /* Rounded ends */
+    border-radius: 2px;
+    /* Muted colour */
+    background: var(--muted);
+    /* Lighter */
+    opacity: 0.5;
+  }
+  /* Page title on the handle */
+  .sheet-title {
+    /* Lower left */
+    grid-area: title;
+    /* Bold */
+    font-weight: 600;
+    /* Cut long titles with an ellipsis */
+    white-space: nowrap;
+    /* Hide overflow */
+    overflow: hidden;
+    /* Ellipsis */
+    text-overflow: ellipsis;
+  }
+  /* What a tap does */
+  .sheet-action {
+    /* Lower right */
+    grid-area: action;
+    /* Accent colour, so it reads as an action */
+    color: var(--accent);
+    /* Slightly smaller */
+    font-size: 14px;
+  }
+  /* Search box comes right after the handle */
+  #search-section {
+    /* Second item in the sheet */
+    order: -2;
+  }
+  /* Selected building comes next */
+  #selection {
+    /* Third item in the sheet */
+    order: -1;
+  }
+  /* Compact legend on small screens, so it does not cover the map */
+  .legend {
+    /* Slightly smaller text, still readable */
+    font-size: 13px;
+    /* Tighter line height */
+    line-height: 17px;
+    /* Less inner spacing */
+    padding: 6px 8px;
+  }
+  /* Smaller swatches on small screens */
+  .legend i {
+    /* Swatch width */
+    width: 14px;
+    /* Swatch height */
+    height: 14px;
+  }
+  /* On small screens only one key fits: the score legend is hidden while a building is selected */
+  body.selecting .score-legend {
+    /* Not shown */
+    display: none;
+  }
+  /* On small screens the "Amenities in reach" heading is left out to save space; the lettered symbols stay */
+  .selection-key .legend-end {
+    /* Not shown */
+    display: none;
+  }
+  /* Amenity symbols in two compact columns, so the key stays small on a phone */
+  .selection-key .key-symbols {
+    /* Grid of symbols */
+    display: grid;
+    /* Two columns */
+    grid-template-columns: auto auto;
+    /* Space between the columns */
+    column-gap: 10px;
+    /* Space above, separating them from the outline rows */
+    margin-top: 4px;
+    /* Thin line above */
+    border-top: 1px solid var(--line);
+    /* Space below the line */
+    padding-top: 3px;
+  }
+  /* One symbol row in the compact key */
+  .selection-key .key-symbols .key-row {
+    /* Rows close together */
+    margin: 1px 0;
+    /* Less space between symbol and name */
+    gap: 5px;
+    /* Smaller text */
+    font-size: 12px;
+  }
+  /* Smaller symbols in the compact key */
+  .selection-key .key-symbols .key-symbol {
+    /* Width */
+    width: 16px;
+    /* Height */
+    height: 16px;
+    /* Letter size */
+    font-size: 10px;
+  }
+  /* Drop the explanatory lines of the legend on small screens (the panel explains the score) */
+  .legend-sub {
+    /* Not shown */
+    display: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Amenity groups of a selected building and the planning scenario
+   --------------------------------------------------------------------------- */
+
+/* Heading of a closed or open amenity group: label on the left, nearest time on the right */
+.poi-group summary {
+  /* Label and time on one line */
+  display: flex;
+  /* Centre them vertically */
+  align-items: center;
+  /* Space around the heading, so it is easy to click */
+  padding: 4px 4px;
+  /* Rounded highlight */
+  border-radius: 4px;
+}
+
+/* Highlight of a group heading under the mouse */
+.poi-group summary:hover {
+  /* Highlight colour from the theme */
+  background: var(--hover);
+}
+
+/* Domain name and count take the free space */
+.poi-label {
+  /* Fill the line */
+  flex: 1;
+}
+
+/* Nearest walking time in the group heading */
+.poi-near {
+  /* Normal weight, so it reads as secondary */
+  font-weight: 400;
+  /* Smaller text */
+  font-size: 12px;
+  /* Secondary colour */
+  color: var(--muted);
+  /* Digits of equal width */
+  font-variant-numeric: tabular-nums;
+}
+
+/* Scenario options stacked one per line */
+.scenario-options .check {
+  /* One option per line */
+  display: block;
+}
+
+/* Line describing a home's change under the scenario */
+.scenario-line {
+  /* Bold, so it stands out in the popup and the panel */
+  font-weight: 600;
+}
+
+/* Before-and-after table of the scenario */
+.scenario-table {
+  /* Full panel width */
+  width: 100%;
+  /* Single lines between cells */
+  border-collapse: collapse;
+  /* Digits of equal width */
+  font-variant-numeric: tabular-nums;
+  /* Space around */
+  margin: 6px 0;
+}
+
+/* Cells of the scenario table, and the captions of both tables */
+.scenario-table th, .scenario-table td {
+  /* Inner spacing */
+  padding: 3px 2px;
+  /* Line under each row */
+  border-bottom: 1px solid var(--line);
+  /* Numbers aligned right */
+  text-align: right;
+}
+
+/* Row labels of the scenario table */
+.scenario-table th:first-child, .scenario-table td:first-child {
+  /* Labels aligned left */
+  text-align: left;
+}
+
+/* Captions of the scenario and summary tables */
+.scenario-table caption, #summary caption {
+  /* Left-aligned */
+  text-align: left;
+  /* Smaller text */
+  font-size: 12px;
+  /* Secondary colour */
+  color: var(--muted);
+  /* Space below */
+  padding-bottom: 2px;
+}
+
+/* Numbered square of a new site, in the panel list and the legend */
+.site-num, .key-site {
+  /* Fixed-size box */
+  display: inline-flex;
+  /* Do not shrink in the list row */
+  flex: none;
+  /* Width */
+  width: 18px;
+  /* Height */
+  height: 18px;
+  /* Centre the number horizontally */
+  justify-content: center;
+  /* Centre the number vertically */
+  align-items: center;
+  /* Slightly rounded square */
+  border-radius: 4px;
+  /* White number */
+  color: #ffffff;
+  /* Small bold number */
+  font: 700 11px/1 system-ui, sans-serif;
+}
+
+/* Space between the legend's site symbol and its label */
+.key-site {
+  /* Space to the label */
+  margin-right: 6px;
+}
+
+/* Site list rows: number, address, units */
+.site-list li {
+  /* Centre the parts vertically */
+  align-items: center;
+}
+
+/* Address column of a site row takes the free space */
+.site-list li > span:nth-child(2) {
+  /* Fill the line */
+  flex: 1;
+}
+
+/* New-site symbol on the map (Leaflet adds this class to the symbol's box) */
+.site-icon span {
+  /* Fill the symbol's box */
+  display: flex;
+  /* Full width of the box */
+  width: 100%;
+  /* Full height of the box */
+  height: 100%;
+  /* Centre the number horizontally */
+  justify-content: center;
+  /* Centre the number vertically */
+  align-items: center;
+  /* Slightly rounded square */
+  border-radius: 5px;
+  /* Thick white outline so the site stands out from amenity symbols */
+  border: 3px solid #ffffff;
+  /* Include the outline in the size */
+  box-sizing: border-box;
+  /* White number */
+  color: #ffffff;
+  /* Bold number */
+  font: 700 13px/1 system-ui, sans-serif;
+  /* Stronger shadow than the amenity symbols */
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.6);
+}
+
+/* Ring sample for newly served homes in the legend */
+.key-ring-small {
+  /* Fixed-size circle */
+  display: inline-block;
+  /* Width */
+  width: 12px;
+  /* Height */
+  height: 12px;
+  /* Ring; its colour is set by app.js to the domain colour */
+  border: 2px solid;
+  /* Circle */
+  border-radius: 50%;
+  /* Space to the label */
+  margin: 0 8px 0 2px;
+}
+
+/* Course and project title at the top of the panel */
+.project-title {
+  /* Small text */
+  font-size: 12px;
+  /* Secondary colour */
+  color: var(--muted);
+  /* Comfortable line height for the long title */
+  line-height: 1.4;
+  /* Line under the title, separating it from the map heading */
+  border-bottom: 1px solid var(--line);
+  /* Space between the title and the line */
+  padding-bottom: 8px;
+  /* Space below */
+  margin: 0 0 10px;
+}
+
+/* Project title in the main text colour */
+.project-title strong {
+  /* Main text colour */
+  color: var(--ink);
+}
+
+/* List of team members */
+.team {
+  /* No bullets */
+  list-style: none;
+  /* No indent */
+  padding: 0;
+  /* No extra space */
+  margin: 0;
+  /* Two columns, so the list stays short */
+  columns: 2;
+  /* Text size of the panel hints */
+  font-size: 13px;
+  /* Space between the lines */
+  line-height: 1.6;
+}
+
+/* Paragraphs inside a site popup */
+.pop-p {
+  /* Space around */
+  margin: 6px 0;
+}
+
+/* Explanatory notes inside a site popup */
+.pop-note {
+  /* Small text */
+  font-size: 11px;
+  /* Secondary grey that stays readable on the white popup */
+  color: #5b6168;
+  /* Space around */
+  margin: 6px 0 0;
+}
+
+/* Note on a site found after the scenario was built (for example an existing supermarket) */
+.pop-flag {
+  /* Small text */
+  font-size: 12px;
+  /* Amber left border so the note stands out */
+  border-left: 3px solid #c4581c;
+  /* Light amber background that stays readable on the white popup */
+  background: #fdf1e7;
+  /* Dark text on the light background */
+  color: #3b2a1a;
+  /* Space inside */
+  padding: 4px 8px;
+  /* Space around */
+  margin: 6px 0;
+}
+
+/* ---------------------------------------------------------------------------
+   Phones: larger tap targets and text boxes that do not zoom the page
+   --------------------------------------------------------------------------- */
+@media (max-width: 760px) {
+  /* Search box and drop-down: 16 px text stops iPhones from zooming in on tap */
+  #search, select {
+    /* Size at which iOS does not zoom */
+    font-size: 16px;
+    /* Comfortable height to tap */
+    min-height: 44px;
+  }
+  /* Buttons */
+  button {
+    /* Tap height */
+    min-height: 40px;
+    /* Slightly larger text */
+    font-size: 14px;
+  }
+  /* Checkbox and radio rows */
+  .check {
+    /* Lay out the box and its label in a row */
+    display: flex;
+    /* Centre them vertically */
+    align-items: center;
+    /* Space between box and label */
+    gap: 8px;
+    /* Tap height */
+    min-height: 40px;
+    /* Rows close together, since each is taller */
+    margin: 0;
+  }
+  /* Scenario options keep the same row layout */
+  .scenario-options .check {
+    /* Row layout */
+    display: flex;
+  }
+  /* Checkboxes and radio buttons */
+  .check input {
+    /* Larger box */
+    width: 20px;
+    /* Larger box */
+    height: 20px;
+    /* No extra outer space */
+    margin: 0;
+    /* Keep the size */
+    flex: none;
+  }
+  /* Walking-time options */
+  .segmented label {
+    /* Tap height */
+    min-height: 40px;
+    /* Centre the text */
+    display: flex;
+    /* Centre vertically */
+    align-items: center;
+    /* Centre horizontally */
+    justify-content: center;
+  }
+  /* Weight sliders: narrower label column so the slider has room */
+  .slider-row {
+    /* Label, slider, share */
+    grid-template-columns: 110px 1fr 40px;
+    /* Rows a little apart */
+    margin: 8px 0;
+  }
+  /* Slider control */
+  .slider-row input[type="range"] {
+    /* Taller touch area */
+    height: 32px;
+  }
+  /* Search results */
+  #search-results li {
+    /* Taller rows to tap */
+    padding: 10px 6px;
+  }
+  /* Amenities in the selected-building list */
+  .poi-list li {
+    /* Taller rows to tap */
+    padding: 9px 4px;
+  }
+  /* Amenity group headings */
+  .poi-group summary {
+    /* Taller headings to tap */
+    padding: 10px 4px;
+  }
+  /* Tables in popups: smaller text so they fit the narrower phone popup */
+  .popup-table {
+    /* Smaller text */
+    font-size: 12px;
+  }
+  /* Zoom buttons of the map */
+  .leaflet-touch .leaflet-bar a {
+    /* Larger buttons */
+    width: 36px;
+    /* Larger buttons */
+    height: 36px;
+    /* Centre the sign */
+    line-height: 36px;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Area views (planning areas and subzones)
+   --------------------------------------------------------------------------- */
+
+/* Switches with three options keep the options on one line */
+.segmented.three {
+  /* Space below, so the two switches do not touch */
+  margin-bottom: 6px;
+}
+/* Options of a three-part switch: centred text */
+.segmented.three label {
+  /* Centre the text */
+  text-align: center;
+  /* Less side padding so three fit */
+  padding: 6px 4px;
+}
+/* While an area view is shown, the building score legend gives way to the area legend */
+body.areas-on .score-legend {
+  /* Not shown */
+  display: none;
+}
+/* Area legend: one row per class */
+.area-legend .legend-row {
+  /* Swatch and label side by side */
+  display: flex;
+  /* Centre vertically */
+  align-items: center;
+  /* Space between swatch and label */
+  gap: 6px;
+}
+/* Swatch of an area class */
+.area-legend i {
+  /* Fixed-size box */
+  display: inline-block;
+  /* Width */
+  width: 16px;
+  /* Height */
+  height: 12px;
+  /* Thin border so white classes show */
+  border: 1px solid #9aa7b4;
+  /* Square swatches, like the areas on the map */
+  border-radius: 2px;
+  /* Do not shrink */
+  flex: none;
+}
+/* Dashed swatch for areas with few units */
+.area-legend i.few {
+  /* Dashed border, as on the map */
+  border: 2px dashed #e08214;
+  /* White fill */
+  background: transparent;
+}
+/* Popup of an area: compact table */
+.area-popup td {
+  /* Space between columns */
+  padding: 1px 8px 1px 0;
+}
+/* Numbers in the area popup line up */
+.area-popup td:last-child {
+  /* Right-aligned */
+  text-align: right;
+  /* Digits of equal width */
+  font-variant-numeric: tabular-nums;
+}
+
+/* One numbered step of the area controls */
+fieldset.step {
+  /* No box around the step */
+  border: none;
+  /* No inner space */
+  padding: 0;
+  /* Space between the steps */
+  margin: 10px 0 0;
+  /* Smooth fade when the step is enabled */
+  transition: opacity 0.2s;
+}
+/* A step that cannot be used yet is shown faded */
+fieldset.step:disabled {
+  /* Faded */
+  opacity: 0.45;
+}
+/* Step title */
+fieldset.step legend {
+  /* Bold */
+  font-weight: 600;
+  /* Space below */
+  margin-bottom: 6px;
+  /* No extra inner space */
+  padding: 0;
+}
+/* Round step number */
+.step-no {
+  /* Centre the digit in a circle */
+  display: inline-flex;
+  /* Centre horizontally */
+  justify-content: center;
+  /* Centre vertically */
+  align-items: center;
+  /* Circle size */
+  width: 20px;
+  /* Circle size */
+  height: 20px;
+  /* Round */
+  border-radius: 50%;
+  /* Accent background */
+  background: var(--accent);
+  /* White digit */
+  color: #ffffff;
+  /* Small bold digit */
+  font: 700 12px/1 system-ui, sans-serif;
+  /* Space after the number */
+  margin-right: 6px;
+}
+/* Second line of an area-level option (count and detail) */
+.segmented.three small {
+  /* Own line */
+  display: block;
+  /* Secondary colour */
+  color: var(--muted);
+  /* Small text */
+  font-size: 11px;
+}
+/* The selected option of a switch is highlighted */
+.segmented label:has(input:checked), .mode-option:has(input:checked) {
+  /* Accent border */
+  border-color: var(--accent);
+  /* Light highlight */
+  background: var(--hover);
+}
+/* Options of step 2, one per row */
+.mode-options {
+  /* Stack the options */
+  display: grid;
+  /* Space between them */
+  gap: 6px;
+}
+/* One option of step 2: radio button and text */
+.mode-option {
+  /* Radio and text side by side */
+  display: flex;
+  /* Radio at the top */
+  align-items: flex-start;
+  /* Space between radio and text */
+  gap: 8px;
+  /* Border around the option */
+  border: 1px solid var(--line);
+  /* Rounded corners */
+  border-radius: 6px;
+  /* Inner spacing */
+  padding: 6px 8px;
+  /* Pointer cursor */
+  cursor: pointer;
+}
+/* Text of a step-2 option: title and explanation on separate lines */
+.mode-option span {
+  /* Stack title and explanation */
+  display: flex;
+  /* One under the other */
+  flex-direction: column;
+}
+/* Explanation of a step-2 option */
+.mode-option small {
+  /* Secondary colour */
+  color: var(--muted);
+  /* Small text */
+  font-size: 12px;
+}
+/* The waiting note is hidden once step 2 can be used */
+fieldset.step:not(:disabled) #area-mode-wait {
+  /* Not shown */
+  display: none;
+}
+/* Phones: larger tap areas for the step-2 options */
+@media (max-width: 760px) {
+  /* Taller options */
+  .mode-option {
+    /* Tap height */
+    min-height: 44px;
+    /* More inner space */
+    padding: 8px 10px;
+  }
+}
+/* Phones: area-level options keep their two lines stacked and centred */
+@media (max-width: 760px) {
+  /* Stack the option text */
+  .segmented.three label {
+    /* Text lines one under the other */
+    flex-direction: column;
+    /* Centred */
+    text-align: center;
+    /* Small gap between the lines */
+    gap: 2px;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Folding sections (Compare areas, Planning scenario) and the area status line
+   --------------------------------------------------------------------------- */
+
+/* Heading of a folding section: title on the left, current choice and arrow on the right */
+details.fold > summary {
+  /* Title and status on one line */
+  display: flex;
+  /* Centre them vertically */
+  align-items: center;
+  /* Space between the parts */
+  gap: 8px;
+  /* Pointer cursor: the heading opens the section */
+  cursor: pointer;
+  /* Hide the browser's own triangle */
+  list-style: none;
+  /* Taller tap area */
+  padding: 4px 0;
+}
+/* Hide the triangle in Safari too */
+details.fold > summary::-webkit-details-marker {
+  /* Not shown */
+  display: none;
+}
+/* Title, styled like the other section headings */
+.fold-title {
+  /* Small, bold heading */
+  font-size: 13px;
+  /* Bold */
+  font-weight: 600;
+  /* Upper case, as the other headings */
+  text-transform: uppercase;
+  /* Slight letter spacing */
+  letter-spacing: 0.04em;
+  /* Secondary colour */
+  color: var(--muted);
+  /* Takes the free space, pushing the status right */
+  flex: 1;
+}
+/* Current choice shown on the closed heading */
+.fold-status {
+  /* Accent colour */
+  color: var(--accent);
+  /* Small text */
+  font-size: 12px;
+  /* Bold */
+  font-weight: 600;
+}
+/* Arrow after the status: points down when closed */
+details.fold > summary::after {
+  /* Arrow character */
+  content: "▾";
+  /* Secondary colour */
+  color: var(--muted);
+  /* Smooth turn */
+  transition: transform 0.2s;
+}
+/* Arrow points up when the section is open */
+details.fold[open] > summary::after {
+  /* Turn the arrow */
+  transform: rotate(180deg);
+}
+/* Status line on the map while an area view is shown */
+.area-chip {
+  /* Above the map, near the top */
+  position: absolute;
+  /* Distance from the top */
+  top: 12px;
+  /* Centred horizontally */
+  left: 50%;
+  /* Centre on its own width */
+  transform: translateX(-50%);
+  /* Above map panes and controls */
+  z-index: 1000;
+  /* Box background from the theme */
+  background: var(--surface);
+  /* Text colour */
+  color: var(--ink);
+  /* Thin accent border */
+  border: 1px solid var(--accent);
+  /* Pill shape */
+  border-radius: 999px;
+  /* Inner spacing */
+  padding: 6px 12px;
+  /* Small text */
+  font-size: 13px;
+  /* Soft shadow */
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.2);
+  /* Pointer cursor: a click opens the area controls */
+  cursor: pointer;
+  /* Keep on one line */
+  white-space: nowrap;
+  /* Inherit the page font */
+  font-family: inherit;
+}
+/* "Change" part of the status line */
+.area-chip span {
+  /* Accent colour */
+  color: var(--accent);
+  /* Space before it */
+  margin-left: 6px;
+}
+/* "Back to buildings" link in an area popup */
+.area-back {
+  /* Own line */
+  display: inline-block;
+  /* Space above */
+  margin-top: 6px;
+  /* Accent colour */
+  color: var(--accent);
+  /* Bold */
+  font-weight: 600;
+}
+
+/* ---------------------------------------------------------------------------
+   UI mock-up (26 October 2026): three groups, welcome card, on/off buttons, legend switch
+   --------------------------------------------------------------------------- */
+
+/* One of the three groups of the panel */
+.group {
+  /* Line above each group */
+  border-top: 2px solid var(--line);
+  /* Space above the group */
+  margin-top: 10px;
+  /* Space inside, above the heading */
+  padding-top: 8px;
+}
+/* Sections inside a group: lighter dividers */
+.group section {
+  /* Thin divider */
+  border-top: 1px dashed var(--line);
+}
+/* The first section of a group needs no divider */
+.group > .group-title + section {
+  /* No line */
+  border-top: none;
+}
+/* Group heading, larger than the section headings */
+.group-title {
+  /* Larger text */
+  font-size: 16px;
+  /* Normal case, unlike the small section headings */
+  text-transform: none;
+  /* No letter spacing */
+  letter-spacing: 0;
+  /* Main text colour */
+  color: var(--ink);
+  /* Number and text on one line */
+  display: flex;
+  /* Centre them */
+  align-items: center;
+  /* Space below */
+  margin: 4px 0 6px;
+}
+/* Label kept for screen readers only */
+.sr-label {
+  /* Taken out of the layout */
+  position: absolute;
+  /* No size */
+  width: 1px;
+  /* No size */
+  height: 1px;
+  /* Hidden */
+  overflow: hidden;
+  /* Clipped away */
+  clip: rect(0 0 0 0);
+}
+/* "Use my location" button */
+.gps-button {
+  /* Full width under the search box */
+  width: 100%;
+  /* Space above */
+  margin-top: 6px;
+  /* Accent colour so it reads as an action */
+  background: var(--accent);
+  /* White text */
+  color: #ffffff;
+  /* No border */
+  border: none;
+  /* Bold */
+  font-weight: 600;
+  /* Comfortable height */
+  padding: 8px 10px;
+}
+/* Location pin before the text */
+.gps-button::before {
+  /* Pin character */
+  content: "⌖ ";
+}
+/* Larger version on the welcome card */
+.gps-button.big {
+  /* Larger text */
+  font-size: 16px;
+  /* Taller */
+  padding: 11px 12px;
+}
+/* Row of on/off buttons */
+.toggle-row {
+  /* Buttons side by side, wrapping */
+  display: flex;
+  /* Wrap onto new lines */
+  flex-wrap: wrap;
+  /* Space between buttons */
+  gap: 6px;
+  /* Space below */
+  margin: 4px 0 8px;
+}
+/* Housing on/off button built from a checkbox */
+.toggle {
+  /* Pill */
+  display: inline-flex;
+  /* Centre the text */
+  align-items: center;
+  /* Hand cursor */
+  cursor: pointer;
+}
+/* The checkbox itself is hidden; the pill shows its state */
+.toggle input {
+  /* Taken out of view */
+  position: absolute;
+  /* No visible box */
+  opacity: 0;
+  /* No size */
+  width: 1px;
+  /* No size */
+  height: 1px;
+}
+/* Pill of a housing button, and amenity buttons */
+.toggle span, .toggle-button {
+  /* Pill shape */
+  border-radius: 999px;
+  /* Border */
+  border: 1.5px solid var(--line);
+  /* Inner spacing */
+  padding: 6px 12px;
+  /* Readable size */
+  font-size: 13px;
+  /* Page background when off */
+  background: var(--surface);
+  /* Text colour */
+  color: var(--ink);
+  /* Symbol and text side by side */
+  display: inline-flex;
+  /* Centre them */
+  align-items: center;
+  /* Space between symbol and text */
+  gap: 6px;
+}
+/* "On" state: filled accent with a tick */
+.toggle input:checked + span, .toggle-button[aria-pressed="true"] {
+  /* Accent fill */
+  background: var(--accent);
+  /* Accent border */
+  border-color: var(--accent);
+  /* White text */
+  color: #ffffff;
+}
+/* Tick before an "on" label */
+.toggle input:checked + span::before, .toggle-button[aria-pressed="true"]::before {
+  /* Tick */
+  content: "✓";
+  /* Bold */
+  font-weight: 700;
+}
+/* Keyboard focus on a hidden checkbox shows on its pill */
+.toggle input:focus-visible + span {
+  /* Focus ring */
+  outline: 2px solid var(--accent);
+  /* Off the edge */
+  outline-offset: 2px;
+}
+/* First-visit card: covers the map area */
+#welcome {
+  /* Fixed over the map */
+  position: fixed;
+  /* Top edge */
+  top: 0;
+  /* Right edge */
+  right: 0;
+  /* Bottom edge */
+  bottom: 0;
+  /* Starts after the side panel */
+  left: var(--panel-w);
+  /* Dims the busy map behind the card */
+  background: rgba(20, 28, 38, 0.55);
+  /* Above the map and its controls */
+  z-index: 1500;
+  /* Centre the card */
+  display: flex;
+  /* Stack the two cards */
+  flex-direction: column;
+  /* Centre vertically, but never cut off the top when the cards are tall */
+  justify-content: safe center;
+  /* Centre horizontally */
+  align-items: center;
+  /* Space between the two cards */
+  gap: 12px;
+  /* Scroll when the cards do not fit (small phones) */
+  overflow-y: auto;
+  /* Space around the card on small screens */
+  padding: 16px;
+}
+/* Hidden card */
+#welcome[hidden] {
+  /* Not shown */
+  display: none;
+}
+/* The card */
+.welcome-card {
+  /* Box background */
+  background: var(--surface);
+  /* Text colour */
+  color: var(--ink);
+  /* Rounded corners */
+  border-radius: 14px;
+  /* Inner space */
+  padding: 22px 22px 16px;
+  /* Width */
+  width: min(460px, 100%);
+  /* Shadow */
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+/* Card title */
+.welcome-card h2 {
+  /* Large */
+  font-size: 22px;
+  /* Normal case */
+  text-transform: none;
+  /* No letter spacing */
+  letter-spacing: 0;
+  /* Main colour */
+  color: var(--ink);
+  /* Space below */
+  margin: 0 0 6px;
+}
+/* Card text */
+.welcome-card p {
+  /* Secondary colour */
+  color: var(--muted);
+  /* Space below */
+  margin: 0 0 12px;
+}
+/* Search box on the card */
+#welcome-search {
+  /* Full width */
+  width: 100%;
+  /* Large text, also stops iPhones zooming */
+  font-size: 17px;
+  /* Tall */
+  padding: 12px 12px;
+  /* Accent border */
+  border: 2px solid var(--accent);
+  /* Rounded */
+  border-radius: 8px;
+  /* Include the border in the width */
+  box-sizing: border-box;
+  /* Box background */
+  background: var(--surface);
+  /* Text colour */
+  color: var(--ink);
+}
+/* Results on the card */
+#welcome-results {
+  /* No bullets */
+  list-style: none;
+  /* No indent */
+  padding: 0;
+  /* Space around */
+  margin: 4px 0 6px;
+  /* Scroll when long */
+  max-height: 220px;
+  /* Scroll inside */
+  overflow-y: auto;
+}
+/* One result on the card */
+#welcome-results li {
+  /* Tap space */
+  padding: 8px 6px;
+  /* Line between results */
+  border-bottom: 1px solid var(--line);
+  /* Hand cursor */
+  cursor: pointer;
+}
+/* Highlight a result under the mouse */
+#welcome-results li:hover {
+  /* Highlight */
+  background: var(--hover);
+}
+/* Second line of a result */
+#welcome-results small {
+  /* Secondary colour */
+  color: var(--muted);
+}
+/* "Or explore the whole map" */
+.link-button {
+  /* Looks like a link */
+  background: none;
+  /* No border */
+  border: none;
+  /* Accent colour */
+  color: var(--accent);
+  /* Underlined */
+  text-decoration: underline;
+  /* Centred on its own line */
+  display: block;
+  /* Centred */
+  margin: 10px auto 0;
+  /* Readable */
+  font-size: 14px;
+}
+/* Note under the GPS button on the card */
+#welcome-note {
+  /* Space above */
+  margin: 8px 0 0;
+}
+/* Legend switch on the map */
+.legend-toggle {
+  /* Box background */
+  background: var(--surface);
+  /* Text colour */
+  color: var(--ink);
+  /* Soft shadow, like the legend */
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  /* Bold */
+  font-weight: 600;
+}
+/* Legends hidden by the switch */
+body.legend-hidden .score-legend, body.legend-hidden .area-legend, body.legend-hidden .selection-key {
+  /* Not shown */
+  display: none;
+}
+/* Phones: the card covers the whole screen; the long heading and line go (the handle names the page) */
+@media (max-width: 760px) {
+  /* Whole screen */
+  #welcome {
+    /* From the left edge */
+    left: 0;
+    /* Above the bottom sheet too */
+    z-index: 2000;
+  }
+  /* Heading and lead line of the panel */
+  #panel > h1, #panel > .lead {
+    /* Not shown */
+    display: none;
+  }
+}
+
+/* "More about this": folded help text */
+details.more > summary {
+  /* Accent colour, so it reads as a link */
+  color: var(--accent);
+  /* Small text */
+  font-size: 12px;
+  /* Hand cursor */
+  cursor: pointer;
+  /* Space above */
+  margin-top: 2px;
+}
+
+/* Second welcome card: what the website is about */
+.welcome-about {
+  /* Slightly smaller text than the main card */
+  font-size: 14px;
+  /* Less inner space */
+  padding: 16px 22px 12px;
+  /* Lighter shadow, so the main card stays the focus */
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+}
+/* Heading of the about card */
+.welcome-about h3 {
+  /* Small capitals style, like the panel headings */
+  font-size: 12px;
+  /* Capitals */
+  text-transform: uppercase;
+  /* Spaced letters */
+  letter-spacing: 0.06em;
+  /* Secondary colour */
+  color: var(--muted);
+  /* Space below */
+  margin: 0 0 8px;
+}
+/* List of points on the about card */
+.welcome-about ul {
+  /* Small indent for the bullets */
+  padding-left: 18px;
+  /* Space below */
+  margin: 0 0 8px;
+}
+/* One point */
+.welcome-about li {
+  /* Space between points */
+  margin-bottom: 6px;
+  /* Comfortable line height */
+  line-height: 1.4;
+}
+/* Course credit line */
+.welcome-about .source {
+  /* Small */
+  font-size: 11px;
+  /* No space below */
+  margin: 0;
+}
